@@ -1,0 +1,1422 @@
+<!--
+//		Copyright 2007 Shawn Summey
+//
+//		Permission is hereby granted, free of charge, to any person obtaining a copy of this
+//		software and associated documentation files (the "Software"), to deal in the Software without restriction,
+//		including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+//		sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to
+//		the following conditions:
+//
+//		The above copyright notice and this permission notice shall be included in all copies or
+//		substantial portions of the Software.
+//
+//		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+//		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+//		PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+//		DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+//		CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+
+<!-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> -->
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head runat="server">
+        <title>jsBlocks</title>
+        <script
+            type="text/javascript"
+            language="javascript"
+            src="scripts/SheetObject.js"
+        ></script>
+        <script
+            type="text/javascript"
+            language="javascript"
+            src="scripts/BaseBlockObject.js"
+        ></script>
+        <script
+            type="text/javascript"
+            language="javascript"
+            src="scripts/FunctionBlockObjects.js"
+        ></script>
+        <script
+            type="text/javascript"
+            language="javascript"
+            src="scripts/ConnectorObject.js"
+        ></script>
+        <script
+            type="text/javascript"
+            language="javascript"
+            src="scripts/LineObject.js"
+        ></script>
+        <script
+            type="text/javascript"
+            language="javascript"
+            src="scripts/CustomBlock.js"
+        ></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <style>
+            body {
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                margin: 0;
+                overflow: hidden;
+            }
+            #viewport {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                overflow: hidden;
+            }
+            #canvas {
+                position: absolute;
+                width: 10000px;
+                height: 10000px;
+                transform-origin: 0 0;
+                background-color: white;
+                border: 2px solid black;
+            }
+            #canvas.show-grid {
+                background-image:
+                    linear-gradient(
+                        to right,
+                        rgba(0, 0, 0, 0.06) 1px,
+                        transparent 1px
+                    ),
+                    linear-gradient(
+                        to bottom,
+                        rgba(0, 0, 0, 0.06) 1px,
+                        transparent 1px
+                    );
+                background-size: 10px 10px;
+            }
+            .line-seg {
+                position: relative;
+            }
+            .line-seg::after {
+                content: "";
+                position: absolute;
+                top: -5px;
+                left: -5px;
+                right: -5px;
+                bottom: -5px;
+            }
+            #toolbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                padding: 6px 10px;
+                background-color: #f0f0f0;
+                border-bottom: 1px solid #ccc;
+                font-family: Calibri, Arial, sans-serif;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                z-index: 500;
+                min-width: 1200px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                white-space: nowrap;
+            }
+            #simButton {
+                padding: 4px 14px;
+                font-size: 13px;
+                font-weight: bold;
+                cursor: pointer;
+                border: 1px solid #888;
+                border-radius: 3px;
+                background-color: #e0e0e0;
+                color: #333;
+            }
+            #simButton.running {
+                background-color: #4caf50;
+                border-color: #388e3c;
+                color: white;
+            }
+            .shortcut-btn {
+                padding: 2px 5px;
+                font-size: 11px;
+                font-family: Calibri, Arial, sans-serif;
+                font-weight: bold;
+                cursor: pointer;
+                border: 1px solid #aaa;
+                border-radius: 2px;
+                background: #fff;
+                color: #333;
+                min-width: 20px;
+                text-align: center;
+            }
+            .shortcut-btn:hover {
+                background: #d0e0ff;
+                border-color: #668;
+            }
+            .shortcut-btn.active {
+                background: #b0c4ff;
+                border-color: #446;
+            }
+            .toolbar-icon-btn {
+                width: 28px;
+                height: 28px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .shortcut-sep {
+                width: 1px;
+                height: 18px;
+                background: #bbb;
+                margin: 0 2px;
+            }
+            .page-line-v,
+            .page-line-h {
+                position: absolute;
+                pointer-events: none;
+                z-index: 0;
+            }
+            .page-line-v {
+                width: 0px;
+                border-left: 1px dashed rgba(0, 0, 200, 0.3);
+            }
+            .page-line-h {
+                height: 0px;
+                border-top: 1px dashed rgba(0, 0, 200, 0.3);
+            }
+            .page-label {
+                position: absolute;
+                font-size: 9px;
+                color: rgba(0, 0, 200, 0.4);
+                font-family: Calibri, Arial, sans-serif;
+                pointer-events: none;
+                z-index: 0;
+            }
+            #keybindOverlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 1001;
+            }
+            #keybindOverlay.visible {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            #keybindBox {
+                background: white;
+                border: 1px solid #888;
+                border-radius: 6px;
+                padding: 20px 28px;
+                min-width: 420px;
+                max-height: 80vh;
+                overflow-y: auto;
+                font-family: Calibri, Arial, sans-serif;
+                font-size: 13px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            }
+            #keybindBox h3 {
+                margin: 0 0 14px 0;
+                font-size: 16px;
+            }
+            .kb-section {
+                font-weight: bold;
+                margin: 12px 0 6px 0;
+                color: #444;
+                font-size: 13px;
+                border-bottom: 1px solid #ddd;
+                padding-bottom: 3px;
+            }
+            .kb-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 3px 0;
+                font-size: 12px;
+            }
+            .kb-key {
+                font-family: monospace;
+                background: #f0f0f0;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                padding: 1px 6px;
+                font-size: 11px;
+            }
+            /* Modal Dialog */
+            .modal-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 1000;
+            }
+            .modal-overlay.visible {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .modal-box {
+                background: white;
+                border: 1px solid #888;
+                border-radius: 6px;
+                padding: 16px 20px;
+                min-width: 300px;
+                font-family: Calibri, Arial, sans-serif;
+                font-size: 13px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            }
+            .modal-box h3 {
+                margin: 0 0 12px 0;
+                font-size: 14px;
+            }
+            .modal-row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+                gap: 8px;
+            }
+            .modal-row label {
+                width: 100px;
+                font-weight: normal;
+            }
+            .modal-row input[type="text"] {
+                flex: 1;
+                padding: 3px 6px;
+                border: 1px solid #aaa;
+                border-radius: 3px;
+                font-size: 13px;
+                font-family: Calibri, Arial, sans-serif;
+            }
+            .modal-row .key-input {
+                width: 60px;
+                text-align: center;
+                text-transform: uppercase;
+            }
+            .modal-buttons {
+                margin-top: 14px;
+                text-align: right;
+            }
+            .modal-buttons button {
+                padding: 4px 16px;
+                margin-left: 6px;
+                font-size: 13px;
+                cursor: pointer;
+                border: 1px solid #888;
+                border-radius: 3px;
+                background: #e0e0e0;
+            }
+            .modal-buttons button.primary {
+                background: #4caf50;
+                color: white;
+                border-color: #388e3c;
+            }
+            .modal-section-title {
+                font-weight: bold;
+                margin: 10px 0 6px 0;
+                color: #555;
+                font-size: 12px;
+                border-bottom: 1px solid #ddd;
+                padding-bottom: 3px;
+            }
+
+            /* ===== Custom Block Editor Styles ===== */
+            #customBlockOverlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1100;
+                align-items: center;
+                justify-content: center;
+            }
+            #customBlockOverlay.visible {
+                display: flex;
+            }
+            #customBlockBox {
+                background: white;
+                border: 1px solid #888;
+                border-radius: 6px;
+                padding: 18px 22px;
+                width: 520px;
+                max-height: 85vh;
+                overflow-y: auto;
+                font-family: Calibri, Arial, sans-serif;
+                font-size: 13px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+            }
+            #customBlockBox h3 {
+                margin: 0 0 14px 0;
+                font-size: 15px;
+            }
+            .cb-section {
+                margin-bottom: 12px;
+            }
+            .cb-section-title {
+                font-weight: bold;
+                font-size: 12px;
+                color: #444;
+                margin-bottom: 5px;
+                border-bottom: 1px solid #e0e0e0;
+                padding-bottom: 3px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .cb-row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 6px;
+                gap: 8px;
+            }
+            .cb-row label {
+                width: 70px;
+                font-size: 12px;
+                color: #555;
+            }
+            .cb-row input[type="text"] {
+                flex: 1;
+                padding: 3px 6px;
+                border: 1px solid #aaa;
+                border-radius: 3px;
+                font-size: 13px;
+                font-family: Calibri, Arial, sans-serif;
+            }
+            .cb-row input[type="number"] {
+                width: 60px;
+                padding: 3px 6px;
+                border: 1px solid #aaa;
+                border-radius: 3px;
+                font-size: 13px;
+                font-family: Calibri, Arial, sans-serif;
+            }
+            .cb-size-label {
+                margin-left: 12px;
+                font-size: 12px;
+                color: #555;
+            }
+            .cb-size-unit {
+                font-size: 11px;
+                color: #888;
+                margin-left: 2px;
+            }
+            .cb-pin-list {
+                max-height: 280px;
+                overflow-y: auto;
+                margin-bottom: 4px;
+            }
+            .cb-pin-row {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                margin-bottom: 3px;
+                padding: 2px 0;
+            }
+            .cb-pin-row input[type="text"] {
+                width: 65px;
+                padding: 2px 4px;
+                border: 1px solid #bbb;
+                border-radius: 3px;
+                font-size: 12px;
+                font-family: Calibri, Arial, sans-serif;
+            }
+            .cb-pin-row input.cb-pin-name {
+                width: 70px;
+                font-weight: bold;
+            }
+            .cb-pin-row input.cb-pin-comment {
+                width: 100px;
+                font-style: italic;
+                color: #555;
+            }
+            .cb-pin-row select {
+                padding: 2px 4px;
+                border: 1px solid #bbb;
+                border-radius: 3px;
+                font-size: 12px;
+                font-family: Calibri, Arial, sans-serif;
+            }
+            .cb-pin-row input[type="number"] {
+                width: 50px;
+                padding: 2px 4px;
+                border: 1px solid #bbb;
+                border-radius: 3px;
+                font-size: 12px;
+                font-family: Calibri, Arial, sans-serif;
+            }
+            .cb-pct-label {
+                font-size: 11px;
+                color: #888;
+            }
+            .cb-state-init-label {
+                font-size: 11px;
+                color: #666;
+                margin-left: 4px;
+            }
+            .cb-remove-btn {
+                background: none;
+                border: none;
+                color: #999;
+                font-size: 16px;
+                cursor: pointer;
+                padding: 0 4px;
+                line-height: 1;
+            }
+            .cb-remove-btn:hover {
+                color: #c00;
+            }
+            .cb-mini-btn {
+                font-size: 10px;
+                padding: 1px 7px;
+                border: 1px solid #bbb;
+                border-radius: 3px;
+                background: #f0f0f0;
+                cursor: pointer;
+                font-family: Calibri, Arial, sans-serif;
+            }
+            .cb-mini-btn:hover {
+                background: #e0e0e0;
+            }
+            #customBlockBox textarea {
+                width: 100%;
+                box-sizing: border-box;
+                font-family: Consolas, "Courier New", monospace;
+                font-size: 12px;
+                border: 1px solid #aaa;
+                border-radius: 3px;
+                padding: 6px 8px;
+                resize: vertical;
+                line-height: 1.4;
+                tab-size: 2;
+                -webkit-user-select: text;
+                -moz-user-select: text;
+                -ms-user-select: text;
+                user-select: text;
+            }
+            #customBlockBox input {
+                -webkit-user-select: text;
+                -moz-user-select: text;
+                -ms-user-select: text;
+                user-select: text;
+            }
+            .cb-hint {
+                font-size: 11px;
+                min-height: 18px;
+                margin: 6px 0;
+                line-height: 1.4;
+                font-family: Consolas, "Courier New", monospace;
+            }
+            .cb-buttons {
+                margin-top: 14px;
+                text-align: right;
+            }
+            .cb-buttons button {
+                padding: 5px 16px;
+                margin-left: 6px;
+                font-size: 13px;
+                cursor: pointer;
+                border: 1px solid #888;
+                border-radius: 3px;
+                background: #e0e0e0;
+                font-family: Calibri, Arial, sans-serif;
+            }
+            .cb-buttons button.primary {
+                background: #4caf50;
+                color: white;
+                border-color: #388e3c;
+            }
+            .cb-buttons button:hover {
+                opacity: 0.9;
+            }
+            .cb-manager-list {
+                max-height: 300px;
+                overflow-y: auto;
+                margin-bottom: 10px;
+            }
+            .cb-manager-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px 4px;
+                border-bottom: 1px solid #eee;
+            }
+            .cb-manager-row:hover {
+                background: #f5f5f5;
+            }
+            .cb-mgr-name {
+                font-weight: bold;
+                font-size: 13px;
+                min-width: 100px;
+            }
+            .cb-mgr-detail {
+                font-size: 11px;
+                color: #777;
+                margin-left: 10px;
+            }
+            .cb-mgr-actions {
+                display: flex;
+                gap: 4px;
+            }
+            .cb-manager-empty {
+                text-align: center;
+                color: #999;
+                font-size: 12px;
+                padding: 20px 0;
+            }
+            /* Settings Overlay */
+            #settingsOverlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 1000;
+            }
+            #settingsOverlay.visible {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            #settingsBox {
+                background: white;
+                border: 1px solid #888;
+                border-radius: 6px;
+                padding: 20px 28px;
+                min-width: 340px;
+                font-family: Calibri, Arial, sans-serif;
+                font-size: 13px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            }
+            #settingsBox h3 {
+                margin: 0 0 14px 0;
+                font-size: 16px;
+            }
+            .settings-section {
+                font-weight: bold;
+                margin: 12px 0 8px 0;
+                color: #444;
+                font-size: 13px;
+                border-bottom: 1px solid #ddd;
+                padding-bottom: 3px;
+            }
+            .settings-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px 0;
+            }
+            .settings-row label {
+                font-size: 13px;
+            }
+            .settings-row select {
+                padding: 2px 6px;
+                font-size: 12px;
+                font-family: Calibri, Arial, sans-serif;
+                border: 1px solid #aaa;
+                border-radius: 3px;
+            }
+            /* HomeAssistant-style toggle switch */
+            .ha-switch {
+                position: relative;
+                display: inline-block;
+                width: 38px;
+                height: 20px;
+                cursor: pointer;
+            }
+            .ha-switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            .ha-slider {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #cccccc;
+                border-radius: 20px;
+                transition: background-color 0.25s ease;
+            }
+            .ha-slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 2px;
+                bottom: 2px;
+                background-color: white;
+                border-radius: 50%;
+                transition: transform 0.25s ease;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            }
+            .ha-switch input:checked + .ha-slider {
+                background-color: #03a9f4;
+            }
+            .ha-switch input:checked + .ha-slider:before {
+                transform: translateX(18px);
+            }
+            .ha-switch input:focus + .ha-slider {
+                box-shadow: 0 0 1px #03a9f4;
+            }
+            .settings-close-btn {
+                display: block;
+                margin: 14px auto 0 auto;
+                padding: 4px 24px;
+                cursor: pointer;
+                border: 1px solid #888;
+                border-radius: 3px;
+                background: #e0e0e0;
+                font-size: 13px;
+            }
+
+            /* ===== Templates Modal Styles ===== */
+            #templatesOverlay {
+                z-index: 1001;
+            }
+            #templatesBox {
+                max-width: 520px;
+                width: 90%;
+                max-height: 70vh;
+                display: flex;
+                flex-direction: column;
+            }
+            #templatesBox h3 {
+                margin: 0 0 10px 0;
+                font-size: 15px;
+                font-weight: bold;
+            }
+            .templates-hint {
+                font-size: 11px;
+                color: #666;
+                margin-bottom: 10px;
+            }
+            .templates-list {
+                flex: 1;
+                overflow-y: auto;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                margin-bottom: 12px;
+                min-height: 120px;
+            }
+            .template-category {
+                font-size: 11px;
+                font-weight: bold;
+                color: #555;
+                padding: 6px 10px 3px 10px;
+                background: #f5f5f5;
+                border-bottom: 1px solid #e0e0e0;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .template-item {
+                padding: 8px 10px 8px 16px;
+                border-bottom: 1px solid #eee;
+                cursor: pointer;
+                transition: background 0.15s;
+            }
+            .template-item:hover {
+                background: #e8f0fe;
+            }
+            .template-item:last-child {
+                border-bottom: none;
+            }
+            .template-name {
+                font-size: 13px;
+                font-weight: 600;
+                color: #333;
+            }
+            .template-desc {
+                font-size: 11px;
+                color: #777;
+                margin-top: 2px;
+            }
+            .templates-empty {
+                padding: 20px;
+                text-align: center;
+                color: #999;
+                font-size: 12px;
+            }
+            .templates-loading {
+                padding: 20px;
+                text-align: center;
+                color: #888;
+                font-size: 12px;
+            }
+            .templates-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+            .templates-footer button {
+                padding: 4px 16px;
+                font-size: 13px;
+                cursor: pointer;
+                border: 1px solid #888;
+                border-radius: 3px;
+                background: #e0e0e0;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="toolbar">
+            <button id="simButton" onclick="my_Sheet.toggleSimulate()">
+                &#9654;
+            </button>
+            <select id="blockList">
+                <optgroup label="Bit Logic">
+                    <option value="And">AND</option>
+                    <option value="Or">OR</option>
+                    <option value="Xor">XOR</option>
+                    <option value="Not">NOT</option>
+                    <option value="SetReset">SR</option>
+                    <option value="ResetSet">RS</option>
+                    <option value="RTrig">R_TRIG</option>
+                    <option value="FTrig">F_TRIG</option>
+                </optgroup>
+                <optgroup label="Timer">
+                    <option value="Ton">TON</option>
+                    <option value="Tof">TOF</option>
+                    <option value="Tonr">TONR</option>
+                </optgroup>
+                <optgroup label="Inputs &amp; Outputs">
+                    <option value="Di">DI</option>
+                    <option value="Do">DO</option>
+                    <option value="Ai">AI</option>
+                    <option value="Aq">AQ</option>
+                    <option value="Constant">CONST</option>
+                    <option value="Variable">VAR</option>
+                </optgroup>
+                <optgroup label="Math">
+                    <option value="Add">ADD</option>
+                    <option value="Subtract">SUB</option>
+                    <option value="Multiply">MUL</option>
+                    <option value="Divide">DIV</option>
+                </optgroup>
+                <optgroup label="Analog Logic">
+                    <option value="NormX">NORM_X</option>
+                    <option value="ScaleX">SCALE_X</option>
+                    <option value="Limit">LIMIT</option>
+                    <option value="Move">MOVE</option>
+                    <option value="IntToReal">INT_TO_REAL</option>
+                    <option value="RealToInt">REAL_TO_INT</option>
+                    <option value="Mux">MUX</option>
+                    <option value="Demux">DEMUX</option>
+                    <option value="InRange">IN_RANGE</option>
+                    <option value="OutOfRange">OUT_RANGE</option>
+                    <option value="Cmp">CMP</option>
+                    <option value="PackSixteen">BIT_TO_WORD</option>
+                    <option value="UnpackSixteen">WORD_TO_BIT</option>
+                </optgroup>
+                <optgroup label="Organization">
+                    <option value="Junction">JUNCTION</option>
+                    <option value="JumpOut">LABEL IN</option>
+                    <option value="JumpIn">LABEL OUT</option>
+                    <option value="LabelInPanel">LABEL IN (Panel)</option>
+                    <option value="LabelOutPanel">LABEL OUT (Panel)</option>
+                    <option value="Comment">COMMENT</option>
+                    <option value="DrawLine">LINE</option>
+                    <option value="Snap">SNAP</option>
+                </optgroup>
+            </select>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Di')"
+                title="Digital Input"
+            >
+                DI
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Do')"
+                title="Digital Output"
+            >
+                DO
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Ai')"
+                title="Analog Input"
+            >
+                AI
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Aq')"
+                title="Analog Output"
+            >
+                AQ
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Variable')"
+                title="Variable"
+            >
+                V
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Constant')"
+                title="Constant"
+            >
+                C
+            </button>
+            <div class="shortcut-sep"></div>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('And')"
+                title="AND"
+            >
+                &amp;
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Or')"
+                title="OR"
+            >
+                &ge;1
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('SetReset')"
+                title="SR (Set-dominant)"
+            >
+                SR
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('ResetSet')"
+                title="RS (Reset-dominant)"
+            >
+                RS
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('RTrig')"
+                title="Rising Edge"
+            >
+                RT
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('FTrig')"
+                title="Falling Edge"
+            >
+                FT
+            </button>
+            <div class="shortcut-sep"></div>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Ton')"
+                title="Timer On-Delay"
+            >
+                TON
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Tof')"
+                title="Timer Off-Delay"
+            >
+                TOF
+            </button>
+            <div class="shortcut-sep"></div>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Comment')"
+                title="Comment Block"
+                style="font-size: 10px"
+            >
+                &#128172;
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('DrawLine')"
+                title="Decoration Line"
+                style="font-size: 10px"
+            >
+                &#9473;
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.selectBlock('Snap')"
+                title="Snap Point"
+                style="font-size: 10px; color: green"
+            >
+                &#10006;
+            </button>
+            <div class="shortcut-sep"></div>
+            <button
+                id="settingsBtn"
+                class="shortcut-btn toolbar-icon-btn"
+                onclick="my_Sheet.toggleSettings()"
+                title="Settings"
+                style="font-size: 16px"
+            >
+                &#9881;
+            </button>
+            <button
+                class="shortcut-btn toolbar-icon-btn"
+                id="printButton"
+                onclick="my_Sheet.printPDF()"
+                title="Export PDF"
+                style="font-size: 16px"
+                disabled
+            >
+                &#128438;
+            </button>
+            <button
+                class="shortcut-btn toolbar-icon-btn"
+                onclick="my_Sheet.saveProject()"
+                title="Save project"
+                style="font-size: 16px"
+            >
+                &#128190;
+            </button>
+            <button
+                class="shortcut-btn toolbar-icon-btn"
+                onclick="document.getElementById('loadFileInput').click()"
+                title="Load project"
+                style="font-size: 16px"
+            >
+                &#128194;
+            </button>
+            <input
+                type="file"
+                id="loadFileInput"
+                accept=".json"
+                style="display: none"
+                onchange="my_Sheet.loadProject(this)"
+            />
+            <button
+                class="shortcut-btn"
+                onclick="my_Sheet.toggleTemplates()"
+                title="Templates"
+                style="
+                    font-size: 11px;
+                    font-weight: bold;
+                    padding: 2px 8px;
+                    width: auto;
+                    height: auto;
+                "
+            >
+                &#128196; Templates
+            </button>
+            <div class="shortcut-sep"></div>
+            <button
+                class="shortcut-btn"
+                onclick="CustomBlockEditor.open(null, my_Sheet)"
+                title="Create Custom Block"
+                style="font-size: 11px; font-weight: bold"
+            >
+                &#10010; New Block
+            </button>
+            <button
+                class="shortcut-btn"
+                onclick="CustomBlockManager.open()"
+                title="Manage Custom Blocks"
+                style="font-size: 11px"
+            >
+                &#9776; Blocks
+            </button>
+            <div class="shortcut-sep"></div>
+            <button
+                id="helpButton"
+                class="shortcut-btn toolbar-icon-btn"
+                onclick="my_Sheet.toggleKeybinds()"
+                title="Keyboard & Mouse Shortcuts"
+                style="font-size: 16px"
+            >
+                ?
+            </button>
+            <div style="flex-grow: 1"></div>
+            <span id="zoomLevel" style="font-size: 11px; color: #666"
+                >100%</span
+            >
+            <span
+                style="
+                    display: inline-flex;
+                    flex-direction: column;
+                    font-size: 10px;
+                    color: #888;
+                    font-family: monospace;
+                    width: 160px;
+                    min-width: 160px;
+                    line-height: 1.3;
+                "
+                id="coordDisplay"
+                ><span id="coordMouse">Mouse: X:0 Y:0</span
+                ><span id="coordSel">Sel: X:- Y:-</span></span
+            >
+        </div>
+        <div id="viewport">
+            <div id="canvas" class="show-grid"></div>
+        </div>
+        <div
+            id="settingsOverlay"
+            class="modal-overlay"
+            onclick="my_Sheet.toggleSettings()"
+        >
+            <div id="settingsBox" onclick="event.stopPropagation()">
+                <h3>Settings</h3>
+                <div class="settings-section">Display</div>
+                <div class="settings-row">
+                    <label for="settingsGridSwitch">Show Grid</label>
+                    <label class="ha-switch">
+                        <input
+                            type="checkbox"
+                            id="settingsGridSwitch"
+                            checked
+                            onchange="my_Sheet.toggleGrid()"
+                        />
+                        <span class="ha-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="settingsSnapToGridSwitch">Snap to Grid</label>
+                    <label class="ha-switch">
+                        <input
+                            type="checkbox"
+                            id="settingsSnapToGridSwitch"
+                            onchange="my_Sheet.toggleSnapToGrid()"
+                        />
+                        <span class="ha-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="settingsGridSizeInput">Grid Size</label>
+                    <input
+                        type="number"
+                        id="settingsGridSizeInput"
+                        min="1"
+                        max="100"
+                        value="10"
+                        style="
+                            width: 60px;
+                            padding: 2px 4px;
+                            font-size: 12px;
+                            font-family: Calibri, Arial, sans-serif;
+                            border: 1px solid #aaa;
+                            border-radius: 3px;
+                        "
+                        onchange="my_Sheet.setGridSize(this.value)"
+                    />
+                </div>
+                <div class="settings-row">
+                    <label for="settingsExecOrderSwitch"
+                        >Show Order Numbers</label
+                    >
+                    <label class="ha-switch">
+                        <input
+                            type="checkbox"
+                            id="settingsExecOrderSwitch"
+                            onchange="my_Sheet.toggleExecOrder()"
+                        />
+                        <span class="ha-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="settingsDelaySwitch">Show Delay on Lines</label>
+                    <label class="ha-switch">
+                        <input
+                            type="checkbox"
+                            id="settingsDelaySwitch"
+                            onchange="my_Sheet.toggleDelaySymbol()"
+                        />
+                        <span class="ha-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-section">Snap</div>
+                <div class="settings-row">
+                    <label for="settingsSnapEnableSwitch"
+                        >Snap to Snap Elements</label
+                    >
+                    <label class="ha-switch">
+                        <input
+                            type="checkbox"
+                            id="settingsSnapEnableSwitch"
+                            checked
+                            onchange="my_Sheet.toggleSnapEnable()"
+                        />
+                        <span class="ha-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="settingsSnapShowSwitch"
+                        >Show Snap Elements</label
+                    >
+                    <label class="ha-switch">
+                        <input
+                            type="checkbox"
+                            id="settingsSnapShowSwitch"
+                            checked
+                            onchange="my_Sheet.toggleSnapShow()"
+                        />
+                        <span class="ha-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="settingsSnapLinesToGridSwitch"
+                        >Snap Lines to Grid</label
+                    >
+                    <label class="ha-switch">
+                        <input
+                            type="checkbox"
+                            id="settingsSnapLinesToGridSwitch"
+                            onchange="my_Sheet.toggleSnapLinesToGrid()"
+                        />
+                        <span class="ha-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-section">Page</div>
+                <div class="settings-row">
+                    <label for="settingsPageFormat">Page Format</label>
+                    <select
+                        id="settingsPageFormat"
+                        onchange="my_Sheet.setPageFormat(this.value)"
+                    >
+                        <option value="none">None</option>
+                        <option value="a4p">A4 Portrait</option>
+                        <option value="a4l">A4 Landscape</option>
+                        <option value="a3p">A3 Portrait</option>
+                        <option value="a3l">A3 Landscape</option>
+                    </select>
+                </div>
+                <div class="settings-section">Simulation</div>
+                <div class="settings-row">
+                    <label for="settingsSimSpeedInput">Scan Cycle (ms)</label>
+                    <select
+                        id="settingsSimSpeedInput"
+                        onchange="my_Sheet.setSimulationSpeed(this.value)"
+                    >
+                        <option value="1">1 ms</option>
+                        <option value="5">5 ms</option>
+                        <option value="10">10 ms</option>
+                        <option value="15" selected>15 ms</option>
+                        <option value="25">25 ms</option>
+                        <option value="50">50 ms</option>
+                        <option value="100">100 ms</option>
+                        <option value="200">200 ms</option>
+                        <option value="500">500 ms</option>
+                    </select>
+                </div>
+                <button
+                    class="settings-close-btn"
+                    onclick="my_Sheet.toggleSettings()"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+        <div id="keybindOverlay" onclick="my_Sheet.toggleKeybinds()">
+            <div id="keybindBox" onclick="event.stopPropagation()">
+                <h3>Keyboard &amp; Mouse Shortcuts</h3>
+                <div class="kb-section">Navigation</div>
+                <div class="kb-row">
+                    <span>Pan canvas</span
+                    ><span
+                        ><span class="kb-key">Middle Mouse</span> drag
+                        &nbsp;or&nbsp; <span class="kb-key">Alt</span> +
+                        drag</span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Zoom in / out</span
+                    ><span><span class="kb-key">Scroll Wheel</span></span>
+                </div>
+                <div class="kb-row">
+                    <span>Reset zoom to 100%</span
+                    ><span
+                        ><span class="kb-key">Middle Mouse</span>
+                        double-click</span
+                    >
+                </div>
+                <div class="kb-section">Blocks</div>
+                <div class="kb-row">
+                    <span>Place block</span
+                    ><span
+                        ><span class="kb-key">Double-click</span> on
+                        canvas</span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Move block</span><span>Drag block</span>
+                </div>
+                <div class="kb-row">
+                    <span>Nudge block 1px</span
+                    ><span
+                        ><span class="kb-key">&uarr;</span>
+                        <span class="kb-key">&darr;</span>
+                        <span class="kb-key">&larr;</span>
+                        <span class="kb-key">&rarr;</span></span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Nudge block 10px</span
+                    ><span
+                        ><span class="kb-key">Shift</span> +
+                        <span class="kb-key">&uarr;</span>
+                        <span class="kb-key">&darr;</span>
+                        <span class="kb-key">&larr;</span>
+                        <span class="kb-key">&rarr;</span></span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Open block settings</span
+                    ><span
+                        ><span class="kb-key">Double-click</span> on block</span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Select block</span><span>Click on block</span>
+                </div>
+                <div class="kb-row">
+                    <span>Multi-select</span
+                    ><span><span class="kb-key">Shift</span> + click</span>
+                </div>
+                <div class="kb-row">
+                    <span>Selection rectangle</span
+                    ><span>Drag on empty canvas</span>
+                </div>
+                <div class="kb-row">
+                    <span>Add to selection (rect)</span
+                    ><span
+                        ><span class="kb-key">Shift</span> + drag on empty
+                        canvas</span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Delete selected</span
+                    ><span><span class="kb-key">Delete</span></span>
+                </div>
+                <div class="kb-row">
+                    <span>Copy selected blocks</span
+                    ><span
+                        ><span class="kb-key">Ctrl</span> +
+                        <span class="kb-key">C</span></span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Paste blocks</span
+                    ><span
+                        ><span class="kb-key">Ctrl</span> +
+                        <span class="kb-key">V</span></span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Deselect all</span
+                    ><span><span class="kb-key">Esc</span></span>
+                </div>
+                <div class="kb-section">Connections</div>
+                <div class="kb-row">
+                    <span>Connect blocks</span
+                    ><span>Click output &rarr; release on input</span>
+                </div>
+                <div class="kb-row">
+                    <span>Select line</span><span>Click on line</span>
+                </div>
+                <div class="kb-row">
+                    <span>Delete line</span
+                    ><span
+                        >Select line + <span class="kb-key">Delete</span></span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Invert connector</span
+                    ><span
+                        ><span class="kb-key">Double-click</span> on bool
+                        connector</span
+                    >
+                </div>
+                <div class="kb-section">Simulation</div>
+                <div class="kb-row">
+                    <span>Start / Stop</span
+                    ><span
+                        >Click <span class="kb-key">Start</span> /
+                        <span class="kb-key">Stop</span> button</span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Toggle DI (click)</span
+                    ><span>Click on DI block during simulation</span>
+                </div>
+                <div class="kb-row">
+                    <span>DI keybindings</span
+                    ><span>Configured per DI block (Set / Reset / Normal)</span>
+                </div>
+                <div class="kb-section">Project</div>
+                <div class="kb-row">
+                    <span>Save project</span
+                    ><span
+                        >Click
+                        <span class="kb-key">&#128190; Save</span> button</span
+                    >
+                </div>
+                <div class="kb-row">
+                    <span>Load project</span
+                    ><span
+                        >Click
+                        <span class="kb-key">&#128194; Load</span> button</span
+                    >
+                </div>
+                <div style="text-align: right; margin-top: 14px">
+                    <button
+                        onclick="my_Sheet.toggleKeybinds()"
+                        style="
+                            padding: 4px 16px;
+                            cursor: pointer;
+                            border: 1px solid #888;
+                            border-radius: 3px;
+                            background: #e0e0e0;
+                        "
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="modalOverlay" class="modal-overlay">
+            <div class="modal-box" id="modalBox"></div>
+        </div>
+        <div id="customBlockOverlay">
+            <div id="customBlockBox"></div>
+        </div>
+        <div
+            id="templatesOverlay"
+            class="modal-overlay"
+            onclick="my_Sheet.toggleTemplates()"
+        >
+            <div
+                id="templatesBox"
+                class="modal-box"
+                onclick="event.stopPropagation()"
+            >
+                <h3>&#128196; Templates</h3>
+                <div class="templates-hint">
+                    Choose a template to load a pre-built example project.
+                </div>
+                <div class="templates-list" id="templatesList">
+                    <div class="templates-loading">Loading templates...</div>
+                </div>
+                <div class="templates-footer">
+                    <button onclick="my_Sheet.toggleTemplates()">Close</button>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script language="javascript" type="text/javascript">
+        var my_Sheet = new SheetObject(); //global sheet object
+        CustomBlockRegistry.init(); // Load custom blocks from localStorage
+    </script>
+</html>

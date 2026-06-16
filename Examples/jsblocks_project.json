@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "blocks": [
+    {
+      "type": "Di",
+      "left": 140,
+      "top": 158,
+      "props": {
+        "tagName": "tagname",
+        "keySet": "",
+        "keyReset": "",
+        "keyNormal": ""
+      },
+      "inInversions": [],
+      "outInversions": [
+        false
+      ],
+      "_saveIndex": 0
+    },
+    {
+      "type": "Di",
+      "left": 265,
+      "top": 254,
+      "props": {
+        "tagName": "tagname",
+        "keySet": "",
+        "keyReset": "",
+        "keyNormal": ""
+      },
+      "inInversions": [],
+      "outInversions": [
+        false
+      ],
+      "_saveIndex": 1
+    },
+    {
+      "type": "RTrig",
+      "left": 448,
+      "top": 102,
+      "props": {},
+      "inInversions": [
+        false
+      ],
+      "outInversions": [
+        false
+      ],
+      "_saveIndex": 2
+    },
+    {
+      "type": "Tof",
+      "left": 681,
+      "top": 159,
+      "props": {},
+      "inInversions": [
+        false,
+        false
+      ],
+      "outInversions": [
+        false,
+        false
+      ],
+      "_saveIndex": 3
+    },
+    {
+      "type": "Do",
+      "left": 833,
+      "top": 177,
+      "props": {
+        "tagName": "tagname"
+      },
+      "inInversions": [
+        false
+      ],
+      "outInversions": [],
+      "_saveIndex": 4
+    },
+    {
+      "type": "Do",
+      "left": 813,
+      "top": 289,
+      "props": {
+        "tagName": "tagname"
+      },
+      "inInversions": [
+        false
+      ],
+      "outInversions": [],
+      "_saveIndex": 5
+    },
+    {
+      "type": "Constant",
+      "left": 529,
+      "top": 221,
+      "props": {
+        "constantValue": 10000
+      },
+      "inInversions": [],
+      "outInversions": [
+        false
+      ],
+      "_saveIndex": 6
+    },
+    {
+      "type": "Variable",
+      "left": 838,
+      "top": 220,
+      "props": {},
+      "inInversions": [
+        false
+      ],
+      "outInversions": [],
+      "_saveIndex": 7
+    }
+  ],
+  "connections": [
+    {
+      "fromBlock": 0,
+      "fromPin": 0,
+      "toBlock": 2,
+      "toPin": 0
+    },
+    {
+      "fromBlock": 1,
+      "fromPin": 0,
+      "toBlock": 5,
+      "toPin": 0
+    },
+    {
+      "fromBlock": 2,
+      "fromPin": 0,
+      "toBlock": 3,
+      "toPin": 0
+    },
+    {
+      "fromBlock": 3,
+      "fromPin": 0,
+      "toBlock": 4,
+      "toPin": 0
+    },
+    {
+      "fromBlock": 3,
+      "fromPin": 1,
+      "toBlock": 7,
+      "toPin": 0
+    },
+    {
+      "fromBlock": 6,
+      "fromPin": 0,
+      "toBlock": 3,
+      "toPin": 1
+    }
+  ]
+}

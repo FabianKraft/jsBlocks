@@ -1,0 +1,56 @@
+[
+    {
+        "name": "Timer Off-Delay Logic",
+        "description": "Digital inputs with TOF timer and edge detection",
+        "file": "timer_delay_logic.json",
+        "category": "Timers"
+    },
+    {
+        "name": "XOR Edge Detection",
+        "description": "XOR gate with rising edge trigger",
+        "file": "xor_edge_detection.json",
+        "category": "Logic"
+    },
+    {
+        "name": "AND Gate Layout",
+        "description": "AND gate with decorative line layout",
+        "file": "and_gate_layout.json",
+        "category": "Logic"
+    },
+    {
+        "name": "XOR with Trigger",
+        "description": "XOR logic with rising edge trigger block",
+        "file": "xor_with_trigger.json",
+        "category": "Logic"
+    },
+    {
+        "name": "Page Layout Frame",
+        "description": "Page border and layout frame template",
+        "file": "page_layout_frame.json",
+        "category": "Layout"
+    },
+    {
+        "name": "Digital I/O Logic",
+        "description": "Basic digital input/output with XOR and timer",
+        "file": "digital_io_logic.json",
+        "category": "Logic"
+    },
+    {
+        "name": "Timer Off-Delay",
+        "description": "Dual input with TOF timer configuration",
+        "file": "timer_off_delay.json",
+        "category": "Timers"
+    },
+    {
+        "name": "Dual Input Timer",
+        "description": "Two digital inputs with timer delay logic",
+        "file": "dual_input_timer.json",
+        "category": "Timers"
+    },
+    {
+        "name": "Drawing Template",
+        "description": "Decorative lines and layout template",
+        "file": "drawing_template.json",
+        "category": "Layout"
+    }
+]

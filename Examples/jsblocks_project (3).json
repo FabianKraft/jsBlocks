@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "blocks": [
+    {
+      "type": "Di",
+      "left": 82,
+      "top": 176,
+      "props": {
+        "tagName": "tagname",
+        "keySet": "",
+        "keyReset": "",
+        "keyNormal": ""
+      },
+      "inInversions": [],
+      "outInversions": [
+        false
+      ],
+      "_saveIndex": 0
+    },
+    {
+      "type": "Do",
+      "left": 714,
+      "top": 198,
+      "props": {
+        "tagName": "tagname"
+      },
+      "inInversions": [
+        false
+      ],
+      "outInversions": [],
+      "_saveIndex": 1
+    },
+    {
+      "type": "Xor",
+      "left": 452,
+      "top": 159,
+      "props": {
+        "numberInputs": 2
+      },
+      "inInversions": [
+        false,
+        false
+      ],
+      "outInversions": [
+        false
+      ],
+      "_saveIndex": 2
+    },
+    {
+      "type": "RTrig",
+      "left": 306,
+      "top": 142,
+      "props": {},
+      "inInversions": [
+        false
+      ],
+      "outInversions": [
+        false
+      ],
+      "_saveIndex": 3
+    },
+    {
+      "type": "Comment",
+      "left": 51,
+      "top": 25,
+      "props": {
+        "commentHTML": "<u>Das ist ein Test</u><div><i>Zeile zwei</i></div><div><b>Zeile drei</b></div>",
+        "commentWidth": 208,
+        "commentHeight": 70
+      },
+      "inInversions": [],
+      "outInversions": [],
+      "_saveIndex": 4
+    },
+    {
+      "type": "Comment",
+      "left": 48,
+      "top": 284,
+      "props": {
+        "commentHTML": "<u>Das ist ein Test</u><div><i>Zeile zwei</i></div><div><b>Zeile drei</b></div>",
+        "commentWidth": 208,
+        "commentHeight": 70
+      },
+      "inInversions": [],
+      "outInversions": [],
+      "_saveIndex": 5
+    },
+    {
+      "type": "DrawLine",
+      "left": 506,
+      "top": 91,
+      "props": {
+        "lineColor": "#000000",
+        "lineThickness": 2,
+        "lineStyle": "solid",
+        "lineWidth": 100
+      },
+      "inInversions": [],
+      "outInversions": [],
+      "_saveIndex": 6
+    }
+  ],
+  "connections": [
+    {
+      "fromBlock": 0,
+      "fromPin": 0,
+      "toBlock": 3,
+      "toPin": 0
+    },
+    {
+      "fromBlock": 2,
+      "fromPin": 0,
+      "toBlock": 1,
+      "toPin": 0
+    },
+    {
+      "fromBlock": 2,
+      "fromPin": 0,
+      "toBlock": 2,
+      "toPin": 1
+    },
+    {
+      "fromBlock": 3,
+      "fromPin": 0,
+      "toBlock": 2,
+      "toPin": 0
+    }
+  ]
+}

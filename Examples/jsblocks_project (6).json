@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "blocks": [
+    {
+      "type": "DrawLine",
+      "left": 150,
+      "top": 0,
+      "props": {
+        "x1": 150,
+        "y1": 0,
+        "x2": 150,
+        "y2": 198,
+        "lineColor": "#000000",
+        "lineThickness": 2,
+        "lineStyle": "",
+        "lineStyleName": "solid"
+      },
+      "inInversions": [],
+      "outInversions": [],
+      "_saveIndex": 0
+    },
+    {
+      "type": "DrawLine",
+      "left": 816,
+      "top": 107,
+      "props": {
+        "x1": 816,
+        "y1": 107,
+        "x2": 816,
+        "y2": 207,
+        "lineColor": "#000000",
+        "lineThickness": 2,
+        "lineStyle": "",
+        "lineStyleName": "solid"
+      },
+      "inInversions": [],
+      "outInversions": [],
+      "_saveIndex": 1
+    },
+    {
+      "type": "And",
+      "left": 305,
+      "top": 142,
+      "props": {
+        "numberInputs": 2
+      },
+      "inInversions": [
+        false,
+        false
+      ],
+      "outInversions": [
+        false
+      ],
+      "_saveIndex": 2
+    },
+    {
+      "type": "DrawLine",
+      "left": 10,
+      "top": 725,
+      "props": {
+        "x1": 10,
+        "y1": 725,
+        "x2": 155,
+        "y2": 725,
+        "lineColor": "#000000",
+        "lineThickness": 2,
+        "lineStyle": "",
+        "lineStyleName": "solid"
+      },
+      "inInversions": [],
+      "outInversions": [],
+      "_saveIndex": 3
+    },
+    {
+      "type": "DrawLine",
+      "left": 10,
+      "top": 10,
+      "props": {
+        "x1": 10,
+        "y1": 10,
+        "x2": 10,
+        "y2": 657,
+        "lineColor": "#000000",
+        "lineThickness": 2,
+        "lineStyle": "",
+        "lineStyleName": "solid"
+      },
+      "inInversions": [],
+      "outInversions": [],
+      "_saveIndex": 4
+    }
+  ],
+  "connections": []
+}
