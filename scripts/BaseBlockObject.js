@@ -1,7 +1,8 @@
 ///////////////////////////////////////////////////////////
 //
 //		Main Block Object
-//		Copyright 2007 Shawn Summey
+//		Copyright 2007 Shawn Summey (original author)
+//		Copyright 2026 Fabian Kraft (current maintainer)
 //
 //		Permission is hereby granted, free of charge, to any person obtaining a copy of this
 //		software and associated documentation files (the "Software"), to deal in the Software without restriction,

@@ -1,6 +1,8 @@
 ///////////////////////////////////////////////////////////
 //
 //		Custom User Block System
+//		Copyright 2007 Shawn Summey (original author)
+//		Copyright 2026 Fabian Kraft (current maintainer)
 //
 //		Allows end-users to create, edit, save, load and
 //		simulate custom function blocks without modifying
