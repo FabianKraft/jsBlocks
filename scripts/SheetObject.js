@@ -56,7 +56,11 @@ function SheetObject() {
   this.panStartPanX = 0;
   this.panStartPanY = 0;
   this.gridVisible = true;
-  this.gridSize = 10;
+  // Grid and page sizes are derived from a fixed pixels-per-millimeter scale
+  // (see PX_PER_MM). The default 12px grid == 3mm, the largest raster that
+  // divides every A-format edge (210, 297, 420mm) evenly, so page boundaries
+  // always land on grid lines.
+  this.gridSize = 12;
   this.snapToGrid = false;
   this.snapEnabled = true;
   this.snapVisible = true;
@@ -694,40 +698,63 @@ SheetObject.prototype.selectBlock = function (blockType) {
 
 // --- Page Format & Markings ---
 
+// Logical pixels per millimeter. Every page and grid dimension is derived from
+// this so page edges always fall on whole grid cells. 4 px/mm keeps all
+// A-format sizes integer (e.g. 210mm -> 840px) and makes a 3mm grid == 12px.
+// The on-screen size is purely logical (the canvas is zoomable); PDF export
+// uses the pdfW/pdfH millimeter values below, so print scale stays exact.
+SheetObject.prototype.PX_PER_MM = 4;
+
 SheetObject.prototype.PAGE_FORMATS = {
   none: null,
   a4p: {
-    w: 794,
-    h: 1123,
+    w: 840, // 210mm * 4
+    h: 1188, // 297mm * 4
     label: "A4 Portrait",
     orient: "portrait",
     pdfW: 210,
     pdfH: 297,
   },
   a4l: {
-    w: 1123,
-    h: 794,
+    w: 1188, // 297mm * 4
+    h: 840, // 210mm * 4
     label: "A4 Landscape",
     orient: "landscape",
     pdfW: 297,
     pdfH: 210,
   },
   a3p: {
-    w: 1123,
-    h: 1587,
+    w: 1188, // 297mm * 4
+    h: 1680, // 420mm * 4
     label: "A3 Portrait",
     orient: "portrait",
     pdfW: 297,
     pdfH: 420,
   },
   a3l: {
-    w: 1587,
-    h: 1123,
+    w: 1680, // 420mm * 4
+    h: 1188, // 297mm * 4
     label: "A3 Landscape",
     orient: "landscape",
     pdfW: 420,
     pdfH: 297,
   },
+};
+
+// Set the grid to the largest raster that divides the active page format's
+// width and height evenly (the gcd of its mm edges, scaled to px). For every
+// A-format this is 3mm (12px), so page boundaries land exactly on grid lines.
+SheetObject.prototype.fitGridToPage = function () {
+  var fmt = this.PAGE_FORMATS[this.currentPageFormat];
+  if (!fmt) {
+    alert("Please select a page format first (Settings → Page).");
+    return;
+  }
+  var gcd = function (a, b) {
+    return b ? gcd(b, a % b) : a;
+  };
+  var gridMm = gcd(fmt.pdfW, fmt.pdfH); // 3mm for A4/A3
+  this.setGridSize(gridMm * this.PX_PER_MM);
 };
 
 SheetObject.prototype.setPageFormat = function (format) {
