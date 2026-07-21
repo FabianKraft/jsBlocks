@@ -232,11 +232,16 @@ function SheetObject() {
     false,
   );
 
-  // Prevent context menu on middle click
+  // Context menu: middle click never shows one; right click opens the
+  // page Copy/Move menu when a page format is active.
   this.viewport.addEventListener(
     "contextmenu",
     function (e) {
-      if (e.button === 1) e.preventDefault();
+      if (e.button === 1) {
+        e.preventDefault();
+        return;
+      }
+      sheetObj._handlePageContextMenu(e);
     },
     false,
   );
@@ -787,6 +792,432 @@ SheetObject.prototype._drawPageMarkings = function (fmt) {
       label.innerHTML = fmt.label + " — Page " + (r * cols + c + 1);
       this.canvas.appendChild(label);
     }
+  }
+};
+
+// --- Page Copy / Move (right-click context menu) ---
+
+// Describe the current page grid, or null when no page format is active.
+SheetObject.prototype._getPageGrid = function () {
+  var format = this.currentPageFormat;
+  if (!format || format === "none") return null;
+  var fmt = this.PAGE_FORMATS[format];
+  if (!fmt) return null;
+  var canvasW = parseInt(this.canvas.style.width) || 10000;
+  var canvasH = parseInt(this.canvas.style.height) || 10000;
+  var cols = Math.floor(canvasW / fmt.w);
+  var rows = Math.floor(canvasH / fmt.h);
+  return { fmt: fmt, cols: cols, rows: rows, count: cols * rows };
+};
+
+// Bounding rect (in canvas coordinates) of a 1-based page number, or null.
+SheetObject.prototype._pageRect = function (pageNumber) {
+  var grid = this._getPageGrid();
+  if (!grid) return null;
+  if (pageNumber < 1 || pageNumber > grid.count) return null;
+  var idx = pageNumber - 1;
+  var r = Math.floor(idx / grid.cols);
+  var c = idx % grid.cols;
+  var left = c * grid.fmt.w;
+  var top = r * grid.fmt.h;
+  return {
+    left: left,
+    top: top,
+    right: left + grid.fmt.w,
+    bottom: top + grid.fmt.h,
+    row: r,
+    col: c,
+  };
+};
+
+// 1-based page number containing a canvas point, or null when outside the grid.
+SheetObject.prototype._pageNumberAtCanvas = function (x, y) {
+  var grid = this._getPageGrid();
+  if (!grid) return null;
+  if (x < 0 || y < 0) return null;
+  var c = Math.floor(x / grid.fmt.w);
+  var r = Math.floor(y / grid.fmt.h);
+  if (c >= grid.cols || r >= grid.rows) return null;
+  return r * grid.cols + c + 1;
+};
+
+// All blocks lying fully inside the given page's bounds.
+SheetObject.prototype._blocksOnPage = function (pageNumber) {
+  var rect = this._pageRect(pageNumber);
+  var result = [];
+  if (!rect) return result;
+  for (var i = 0; i < this.blockObjects.length; i++) {
+    var blk = this.blockObjects[i];
+    if (!blk || !blk.divObj) continue;
+    var bLeft = parseInt(blk.divObj.style.left) || 0;
+    var bTop = parseInt(blk.divObj.style.top) || 0;
+    var bW = parseInt(blk.divObj.style.width) || blk.divWidth || 0;
+    var bH = parseInt(blk.divObj.style.height) || blk.divHeight || 0;
+    var bRight = bLeft + bW;
+    var bBottom = bTop + bH;
+    if (
+      bLeft >= rect.left &&
+      bTop >= rect.top &&
+      bRight <= rect.right &&
+      bBottom <= rect.bottom
+    ) {
+      result.push(blk);
+    }
+  }
+  return result;
+};
+
+// Entry point wired to the viewport "contextmenu" event.
+SheetObject.prototype._handlePageContextMenu = function (e) {
+  this._removePageContextMenu();
+  var grid = this._getPageGrid();
+  if (!grid) return; // No page format → let the browser menu appear
+
+  var cp = this.screenToCanvas(e.clientX, e.clientY);
+  var pageNumber = this._pageNumberAtCanvas(cp.x, cp.y);
+  if (pageNumber == null) return; // Outside the page grid
+
+  e.preventDefault();
+  this._showPageContextMenu(e.clientX, e.clientY, pageNumber);
+};
+
+SheetObject.prototype._removePageContextMenu = function () {
+  if (this._pageContextMenu && this._pageContextMenu.parentNode) {
+    this._pageContextMenu.parentNode.removeChild(this._pageContextMenu);
+  }
+  this._pageContextMenu = null;
+  if (this._pageContextMenuCloser) {
+    document.removeEventListener("mousedown", this._pageContextMenuCloser, true);
+    window.removeEventListener("blur", this._pageContextMenuCloser);
+    this._pageContextMenuCloser = null;
+  }
+};
+
+SheetObject.prototype._showPageContextMenu = function (
+  clientX,
+  clientY,
+  pageNumber,
+) {
+  var sheet = this;
+  var menu = document.createElement("div");
+  menu.className = "page-context-menu";
+  menu.style.position = "fixed";
+  menu.style.left = clientX + "px";
+  menu.style.top = clientY + "px";
+  menu.style.zIndex = "1200";
+  menu.style.minWidth = "120px";
+  menu.style.background = "#ffffff";
+  menu.style.border = "1px solid #888";
+  menu.style.borderRadius = "4px";
+  menu.style.boxShadow = "0 3px 10px rgba(0,0,0,0.25)";
+  menu.style.padding = "4px 0";
+  menu.style.fontFamily = "Calibri, Arial, sans-serif";
+  menu.style.fontSize = "13px";
+  menu.style.userSelect = "none";
+
+  var header = document.createElement("div");
+  header.textContent = "Page " + pageNumber;
+  header.style.padding = "2px 14px 4px 14px";
+  header.style.color = "#888";
+  header.style.fontSize = "11px";
+  header.style.borderBottom = "1px solid #eee";
+  header.style.marginBottom = "3px";
+  menu.appendChild(header);
+
+  function addItem(text, handler) {
+    var item = document.createElement("div");
+    item.textContent = text;
+    item.style.padding = "5px 14px";
+    item.style.cursor = "pointer";
+    item.addEventListener("mouseenter", function () {
+      item.style.background = "#e8f0fe";
+    });
+    item.addEventListener("mouseleave", function () {
+      item.style.background = "";
+    });
+    item.addEventListener("mousedown", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      sheet._removePageContextMenu();
+      handler();
+    });
+    menu.appendChild(item);
+  }
+
+  addItem("Copy", function () {
+    sheet._openPageTransferDialog("copy", pageNumber);
+  });
+  addItem("Move", function () {
+    sheet._openPageTransferDialog("move", pageNumber);
+  });
+
+  document.body.appendChild(menu);
+  this._pageContextMenu = menu;
+
+  // Keep the menu inside the viewport
+  var rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) {
+    menu.style.left = window.innerWidth - rect.width - 4 + "px";
+  }
+  if (rect.bottom > window.innerHeight) {
+    menu.style.top = window.innerHeight - rect.height - 4 + "px";
+  }
+
+  // Dismiss on any outside interaction
+  this._pageContextMenuCloser = function (ev) {
+    if (ev && ev.type === "mousedown" && menu.contains(ev.target)) return;
+    sheet._removePageContextMenu();
+  };
+  document.addEventListener("mousedown", this._pageContextMenuCloser, true);
+  window.addEventListener("blur", this._pageContextMenuCloser);
+};
+
+// Build and show the Copy/Move dialog. mode is "copy" or "move".
+SheetObject.prototype._openPageTransferDialog = function (mode, sourcePage) {
+  var grid = this._getPageGrid();
+  if (!grid) return;
+  var sheet = this;
+  var isCopy = mode === "copy";
+  var title = isCopy ? "Copy Page" : "Move Page";
+  var targetHint = isCopy
+    ? "Target page(s) — comma separated, e.g. 2, 4"
+    : "Target page";
+
+  var html =
+    "<h3>" +
+    title +
+    "</h3>" +
+    '<div class="modal-row">' +
+    "<label>Source</label>" +
+    '<input type="text" value="' +
+    sourcePage +
+    '" readonly style="background:#f0f0f0;" />' +
+    "</div>" +
+    '<div class="modal-row">' +
+    "<label>Target</label>" +
+    '<input type="text" id="pageTransferTarget" placeholder="' +
+    (isCopy ? "e.g. 2, 4, 5" : "e.g. 3") +
+    '" />' +
+    "</div>" +
+    '<div style="font-size:11px;color:#888;margin:-4px 0 8px 108px;">' +
+    targetHint +
+    " (1–" +
+    grid.count +
+    ")</div>" +
+    '<div class="modal-row">' +
+    '<label>Destructive</label>' +
+    '<input type="checkbox" id="pageTransferDestructive" style="width:auto;flex:none;" />' +
+    '<span style="font-size:11px;color:#888;">overwrite target instead of adding</span>' +
+    "</div>";
+
+  Base.showModal(html, function () {
+    var raw = document.getElementById("pageTransferTarget").value || "";
+    var destructive = document.getElementById(
+      "pageTransferDestructive",
+    ).checked;
+
+    // Parse target page numbers
+    var parts = raw.split(",");
+    var targets = [];
+    for (var i = 0; i < parts.length; i++) {
+      var t = parts[i].trim();
+      if (t === "") continue;
+      var n = parseInt(t, 10);
+      if (isNaN(n)) {
+        alert('Invalid page number: "' + t + '"');
+        return;
+      }
+      if (n < 1 || n > grid.count) {
+        alert("Page " + n + " is out of range (1–" + grid.count + ").");
+        return;
+      }
+      if (n === sourcePage) {
+        alert("Target page must differ from the source page.");
+        return;
+      }
+      if (targets.indexOf(n) === -1) targets.push(n);
+    }
+
+    if (targets.length === 0) {
+      alert("Please enter at least one target page.");
+      return;
+    }
+    if (!isCopy && targets.length > 1) {
+      alert("Move supports only a single target page.");
+      return;
+    }
+
+    sheet._transferPage(sourcePage, targets, {
+      destructive: destructive,
+      keepSource: isCopy,
+    });
+  });
+};
+
+// Copy (keepSource) or Move the content of sourcePage onto one or more targets.
+SheetObject.prototype._transferPage = function (sourcePage, targets, opts) {
+  var sourceRect = this._pageRect(sourcePage);
+  if (!sourceRect) return;
+
+  var sourceBlocks = this._blocksOnPage(sourcePage);
+  if (sourceBlocks.length === 0) {
+    alert("The source page is empty — nothing to " +
+      (opts.keepSource ? "copy" : "move") + ".");
+    return;
+  }
+
+  // Serialize the source once; every target is rebuilt from this snapshot.
+  var snapshot = this._snapshotBlocks(sourceBlocks);
+
+  this.deselectAll();
+
+  for (var t = 0; t < targets.length; t++) {
+    var targetRect = this._pageRect(targets[t]);
+    if (!targetRect) continue;
+
+    if (opts.destructive) {
+      this._deleteBlocks(this._blocksOnPage(targets[t]));
+    }
+
+    var dx = targetRect.left - sourceRect.left;
+    var dy = targetRect.top - sourceRect.top;
+    this._rebuildSnapshot(snapshot, dx, dy);
+  }
+
+  // Move removes the source content after it has been replicated.
+  if (!opts.keepSource) {
+    this._deleteBlocks(this._blocksOnPage(sourcePage));
+  }
+};
+
+// Serialize a set of blocks together with the connections *between* them.
+SheetObject.prototype._snapshotBlocks = function (blocks) {
+  var snap = { blocks: [], connections: [] };
+  for (var i = 0; i < blocks.length; i++) {
+    var data = blocks[i].serialize();
+    snap.blocks.push(data);
+  }
+  for (var i = 0; i < blocks.length; i++) {
+    var block = blocks[i];
+    for (var o = 0; o < block.outConnections.length; o++) {
+      var outConn = block.outConnections[o];
+      for (var c = 0; c < outConn.connectedTo.length; c++) {
+        var inConn = outConn.connectedTo[c];
+        var targetBlock = inConn.instruction;
+        var targetIdx = blocks.indexOf(targetBlock);
+        if (targetIdx >= 0) {
+          var inIdx = targetBlock.inConnections.indexOf(inConn);
+          snap.connections.push({
+            fromBlock: i,
+            fromPin: o,
+            toBlock: targetIdx,
+            toPin: inIdx,
+          });
+        }
+      }
+    }
+  }
+  return snap;
+};
+
+// Recreate a snapshot on the canvas, offset by (dx, dy). Returns the new blocks.
+SheetObject.prototype._rebuildSnapshot = function (snapshot, dx, dy) {
+  var newBlocks = [];
+
+  for (var i = 0; i < snapshot.blocks.length; i++) {
+    var data = snapshot.blocks[i];
+    var block = this._createBlockInstance(data.type);
+    if (!block) {
+      console.warn("Cannot transfer block type: " + data.type + ", skipping.");
+      newBlocks.push(null);
+      continue;
+    }
+    block._needsInitialSettings = false;
+    block._handlesOwnConnectors = true;
+
+    var newLeft = data.left + dx;
+    var newTop = data.top + dy;
+    var centerX = newLeft + (block.divWidth || 60) / 2;
+    var centerY = newTop + (block.divHeight || 80) / 2;
+    block.create(this, centerX, centerY);
+
+    block.divObj.style.left = newLeft;
+    block.divObj.style.top = newTop;
+    if (block._updateExecOrderPosition) block._updateExecOrderPosition();
+
+    if (block.applySerializedProps && Object.keys(data.props).length > 0) {
+      block.applySerializedProps(JSON.parse(JSON.stringify(data.props)));
+    }
+
+    if (block.inConnections.length === 0 && block.outConnections.length === 0) {
+      block.addConnections();
+    }
+
+    block.restoreInversions(data);
+
+    block.indexNumber = this.blockIndex;
+    this.blockObjects[this.blockIndex] = block;
+    this.blockIndex++;
+    newBlocks.push(block);
+  }
+
+  // Sync connector positions after placement
+  for (var i = 0; i < newBlocks.length; i++) {
+    var block = newBlocks[i];
+    if (!block) continue;
+    for (var ci = 0; ci < block.inConnections.length; ci++) {
+      block.inConnections[ci].moveConnector();
+    }
+    for (var co = 0; co < block.outConnections.length; co++) {
+      block.outConnections[co].moveConnector();
+    }
+  }
+
+  // Recreate intra-page connections
+  for (var c = 0; c < snapshot.connections.length; c++) {
+    var conn = snapshot.connections[c];
+    var fromBlock = newBlocks[conn.fromBlock];
+    var toBlock = newBlocks[conn.toBlock];
+    if (
+      fromBlock &&
+      toBlock &&
+      conn.fromPin < fromBlock.outConnections.length &&
+      conn.toPin < toBlock.inConnections.length
+    ) {
+      var outConn = fromBlock.outConnections[conn.fromPin];
+      var inConn = toBlock.inConnections[conn.toPin];
+      if (inConn.connectedFrom == null) {
+        inConn.theLine = new LineObject(inConn, outConn);
+        inConn.theLine.connectTo();
+        outConn.addConnector(inConn);
+        inConn.connectedFrom = outConn;
+      }
+    }
+  }
+
+  return newBlocks;
+};
+
+// Fully remove a list of blocks (connectors, lines, DOM node) from the sheet.
+SheetObject.prototype._deleteBlocks = function (blocks) {
+  for (var b = 0; b < blocks.length; b++) {
+    var block = blocks[b];
+    if (!block) continue;
+    block.removeConnectors();
+
+    var selIdx = this.selectedBlocks.indexOf(block);
+    if (selIdx >= 0) this.selectedBlocks.splice(selIdx, 1);
+    if (this.currentInstr === block) this.currentInstr = null;
+
+    var idx = this.blockObjects.indexOf(block);
+    if (idx >= 0) {
+      this.blockObjects.splice(idx, 1);
+      this.blockIndex--;
+    }
+  }
+  // Reindex remaining blocks
+  for (var x = 0; x < this.blockObjects.length; x++) {
+    this.blockObjects[x].indexNumber = x;
   }
 };
 
