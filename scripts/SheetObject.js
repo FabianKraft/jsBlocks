@@ -917,12 +917,78 @@ SheetObject.prototype._createBlockInstance = function (typeName) {
   return eval("new " + typeName + "Block");
 };
 
+// Collect the current sheet settings into a plain object for saving.
+SheetObject.prototype._collectSettings = function () {
+  return {
+    gridVisible: this.gridVisible,
+    gridSize: this.gridSize,
+    snapToGrid: this.snapToGrid,
+    snapEnabled: this.snapEnabled,
+    snapVisible: this.snapVisible,
+    snapLinesToGrid: this.snapLinesToGrid,
+    execOrderVisible: this.execOrderVisible,
+    delaySymbolVisible: this.delaySymbolVisible,
+    currentPageFormat: this.currentPageFormat,
+    simulationCycleMs: this.simulationCycleMs,
+  };
+};
+
+// Apply saved settings back onto the sheet. Reuses the existing toggle/setter
+// methods so both internal state and the settings UI stay in sync. Boolean
+// toggles are only flipped when the saved value differs from the current one.
+SheetObject.prototype._applySettings = function (settings) {
+  if (!settings) return;
+
+  if (
+    typeof settings.gridVisible === "boolean" &&
+    settings.gridVisible !== this.gridVisible
+  )
+    this.toggleGrid();
+  if (
+    typeof settings.snapToGrid === "boolean" &&
+    settings.snapToGrid !== this.snapToGrid
+  )
+    this.toggleSnapToGrid();
+  if (
+    typeof settings.snapEnabled === "boolean" &&
+    settings.snapEnabled !== this.snapEnabled
+  )
+    this.toggleSnapEnable();
+  if (
+    typeof settings.snapVisible === "boolean" &&
+    settings.snapVisible !== this.snapVisible
+  )
+    this.toggleSnapShow();
+  if (
+    typeof settings.snapLinesToGrid === "boolean" &&
+    settings.snapLinesToGrid !== this.snapLinesToGrid
+  )
+    this.toggleSnapLinesToGrid();
+  if (
+    typeof settings.execOrderVisible === "boolean" &&
+    settings.execOrderVisible !== this.execOrderVisible
+  )
+    this.toggleExecOrder();
+  if (
+    typeof settings.delaySymbolVisible === "boolean" &&
+    settings.delaySymbolVisible !== this.delaySymbolVisible
+  )
+    this.toggleDelaySymbol();
+
+  if (settings.gridSize != null) this.setGridSize(settings.gridSize);
+  if (settings.simulationCycleMs != null)
+    this.setSimulationSpeed(settings.simulationCycleMs);
+  if (settings.currentPageFormat != null)
+    this.setPageFormat(settings.currentPageFormat);
+};
+
 SheetObject.prototype.saveProject = function () {
   var project = {
     version: 1,
     blocks: [],
     connections: [],
     customDefinitions: {},
+    settings: this._collectSettings(),
   };
 
   // Collect custom block definitions used in this project
@@ -1213,6 +1279,10 @@ SheetObject.prototype._restoreProject = function (project) {
       }
     }
   }
+
+  // Step 4: Restore sheet settings (after blocks/lines exist so visual
+  // toggles such as snap visibility and exec-order numbers apply correctly)
+  this._applySettings(project.settings);
 };
 
 // --- Copy / Paste ---
