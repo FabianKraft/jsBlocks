@@ -982,6 +982,21 @@
             >
                 &#128438;
             </button>
+            <input
+                type="text"
+                id="projectNameInput"
+                placeholder="Projektname"
+                title="Project name (used in the saved file name)"
+                oninput="my_Sheet.setProjectName(this.value)"
+                style="
+                    width: 130px;
+                    padding: 3px 6px;
+                    font-size: 12px;
+                    font-family: Calibri, Arial, sans-serif;
+                    border: 1px solid #aaa;
+                    border-radius: 3px;
+                "
+            />
             <button
                 class="shortcut-btn toolbar-icon-btn"
                 onclick="my_Sheet.saveProject()"

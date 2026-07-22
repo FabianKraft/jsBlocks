@@ -69,6 +69,9 @@ function SheetObject() {
   // Orthogonal A* router for connection lines (obstacle + overlap aware).
   this.lineRouter = new LineRouter(this);
 
+  // Project name (used in the saved file and its filename).
+  this.projectName = "";
+
   // Position viewport below toolbar
   var self = this;
   setTimeout(function () {
@@ -1645,9 +1648,47 @@ SheetObject.prototype._applySettings = function (settings) {
     this.setPageFormat(settings.currentPageFormat);
 };
 
+// Update the project name from the toolbar input (or programmatically).
+SheetObject.prototype.setProjectName = function (value) {
+  this.projectName = value == null ? "" : String(value);
+  var inp = document.getElementById("projectNameInput");
+  if (inp && document.activeElement !== inp) inp.value = this.projectName;
+};
+
+// Strip characters that are illegal in filenames and turn spaces into
+// underscores, so the project name can be embedded safely on any OS.
+SheetObject.prototype._sanitizeFilename = function (name) {
+  var s = (name == null ? "" : String(name)).trim();
+  s = s.replace(/[\\/:*?"<>|]/g, ""); // drop illegal characters
+  s = s.replace(/\s+/g, "_"); // spaces -> underscore
+  s = s.replace(/_+/g, "_"); // collapse repeats
+  s = s.replace(/^_+|_+$/g, ""); // trim leading/trailing underscores
+  return s;
+};
+
+// Local timestamp "YYYY-MM-DD_HH-MM" for the save filename.
+SheetObject.prototype._timestampString = function () {
+  var d = new Date();
+  var pad = function (n) {
+    return (n < 10 ? "0" : "") + n;
+  };
+  return (
+    d.getFullYear() +
+    "-" +
+    pad(d.getMonth() + 1) +
+    "-" +
+    pad(d.getDate()) +
+    "_" +
+    pad(d.getHours()) +
+    "-" +
+    pad(d.getMinutes())
+  );
+};
+
 SheetObject.prototype.saveProject = function () {
   var project = {
     version: 1,
+    name: this.projectName || "",
     blocks: [],
     connections: [],
     customDefinitions: {},
@@ -1692,13 +1733,19 @@ SheetObject.prototype.saveProject = function () {
     }
   }
 
-  // Download as JSON
+  // Download as JSON. Filename: jsblocks_<name>_<timestamp>.json
+  // (falls back to jsblocks_<timestamp>.json when no name is set).
   var json = JSON.stringify(project, null, 2);
   var blob = new Blob([json], { type: "application/json" });
   var url = URL.createObjectURL(blob);
+  var clean = this._sanitizeFilename(this.projectName);
+  var ts = this._timestampString();
+  var fileName = clean
+    ? "jsblocks_" + clean + "_" + ts + ".json"
+    : "jsblocks_" + ts + ".json";
   var a = document.createElement("a");
   a.href = url;
-  a.download = "jsblocks_project.json";
+  a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -1845,6 +1892,9 @@ SheetObject.prototype._loadTemplate = function (filename) {
 SheetObject.prototype._restoreProject = function (project) {
   // Stop simulation if running
   if (this.simulateOn) this.toggleSimulate();
+
+  // Restore project name into state and the toolbar field.
+  this.setProjectName(project.name || "");
 
   // Clear all existing blocks
   this.deselectAll();
