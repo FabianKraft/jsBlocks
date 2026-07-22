@@ -285,13 +285,18 @@ LineRouter.prototype.route = function (from, to, options) {
   pts = LineRouter._simplify(pts);
 
   if (pts.length >= 2) {
-    // First segment is horizontal (start exits East) -> lift it to exact from.y.
+    // Pin the endpoints to the exact pin positions.
     pts[0] = { x: from.x, y: from.y };
-    pts[1].y = from.y;
-    var n = pts.length;
-    // Last segment is horizontal (goal entered from West) -> exact to.y.
-    pts[n - 1] = { x: to.x, y: to.y };
-    pts[n - 2].y = to.y;
+    pts[pts.length - 1] = { x: to.x, y: to.y };
+    // Keep the first/last segments horizontal by lifting the adjacent bend
+    // points to the pin's Y. Only do this when those bend points are genuine,
+    // distinct interior vertices (>=4 points); otherwise (a straight 2-point
+    // or single-bend path) leave it to _orthogonalize, so the endpoint fix
+    // above can never overwrite the opposite endpoint.
+    if (pts.length >= 4) {
+      pts[1] = { x: pts[1].x, y: from.y };
+      pts[pts.length - 2] = { x: pts[pts.length - 2].x, y: to.y };
+    }
   } else {
     pts = [
       { x: from.x, y: from.y },
