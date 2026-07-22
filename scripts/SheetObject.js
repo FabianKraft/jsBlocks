@@ -66,6 +66,9 @@ function SheetObject() {
   this.snapVisible = true;
   this.snapLinesToGrid = false;
 
+  // Orthogonal A* router for connection lines (obstacle + overlap aware).
+  this.lineRouter = new LineRouter(this);
+
   // Position viewport below toolbar
   var self = this;
   setTimeout(function () {
@@ -364,6 +367,13 @@ function SheetObject() {
                   : "rgb(3,255,3)";
               }
             }
+            // Junction dots carry the same signal as the net's lines.
+            if (outConn.junctionDots) {
+              var dotColor = effVal ? "rgb(3,255,3)" : "rgb(0,0,255)";
+              for (var jd = 0; jd < outConn.junctionDots.length; jd++) {
+                outConn.junctionDots[jd].style.backgroundColor = dotColor;
+              }
+            }
           }
         }
         // Update unconnected bool input connectors to blue
@@ -503,19 +513,185 @@ SheetObject.prototype.toggleSnapLinesToGrid = function () {
   var sw = document.getElementById("settingsSnapLinesToGridSwitch");
   if (sw) sw.checked = this.snapLinesToGrid;
   // Redraw all lines with the new routing
-  this._redrawAllLines();
+  this.rerouteAllLines();
+};
+
+// Collect every connection line on the sheet, in a stable order.
+SheetObject.prototype._allLines = function () {
+  var lines = [];
+  for (var i = 0; i < this.blockObjects.length; i++) {
+    var block = this.blockObjects[i];
+    if (!block.inConnections) continue;
+    for (var j = 0; j < block.inConnections.length; j++) {
+      var conn = block.inConnections[j];
+      if (conn && conn.theLine) lines.push(conn.theLine);
+    }
+  }
+  return lines;
 };
 
 SheetObject.prototype._redrawAllLines = function () {
+  var lines = this._allLines();
+  for (var i = 0; i < lines.length; i++) lines[i].connectTo();
+};
+
+// Full-quality reroute of every line, grouped into nets by their output pin.
+// Lines of the SAME net (same signal) are attracted onto a shared trunk and get
+// junction dots where they branch; lines of DIFFERENT nets repel each other so
+// unrelated signals stay in separate lanes and simply cross without a dot.
+SheetObject.prototype.rerouteAllLines = function () {
+  if (!this.lineRouter) {
+    this._redrawAllLines();
+    return;
+  }
+
+  this._clearAllJunctionDots();
+
+  // Group lines by output connector (= one signal / net).
+  var nets = [];
+  var outs = [];
+  var all = this._allLines();
+  for (var i = 0; i < all.length; i++) {
+    var out = all[i].fromConnectorObj;
+    var idx = outs.indexOf(out);
+    if (idx < 0) {
+      outs.push(out);
+      nets.push({ out: out, lines: [all[i]] });
+    } else {
+      nets[idx].lines.push(all[i]);
+    }
+  }
+
+  var byLen = function (a, b) {
+    var ea = a._endpoints();
+    var eb = b._endpoints();
+    var da = Math.abs(ea.to.x - ea.from.x) + Math.abs(ea.to.y - ea.from.y);
+    var db = Math.abs(eb.to.x - eb.from.x) + Math.abs(eb.to.y - eb.from.y);
+    return da - db;
+  };
+
+  this.lineRouter.clearOccupancy();
+  for (var n = 0; n < nets.length; n++) {
+    var net = nets[n];
+    net.lines.sort(byLen); // grow the trunk from the shortest branch outward
+    var prefer = {};
+    for (var l = 0; l < net.lines.length; l++) {
+      var line = net.lines[l];
+      var pts = line.computeNetPath(prefer);
+      line._applyPath(pts);
+      this.lineRouter.addPathCells(prefer, pts);
+    }
+    // Fold the whole net into occupancy so later nets route around it.
+    this.lineRouter.stampCells(prefer);
+    // Draw connection dots where this net's lines branch (T / crossing).
+    this._drawNetJunctions(net);
+  }
+};
+
+// Remove every net's junction dots from the canvas.
+SheetObject.prototype._clearAllJunctionDots = function () {
   for (var i = 0; i < this.blockObjects.length; i++) {
     var block = this.blockObjects[i];
-    for (var j = 0; j < block.inConnections.length; j++) {
-      var conn = block.inConnections[j];
-      if (conn.theLine) {
-        conn.theLine.connectTo();
+    if (!block.outConnections) continue;
+    for (var o = 0; o < block.outConnections.length; o++) {
+      var oc = block.outConnections[o];
+      if (oc.junctionDots) {
+        for (var d = 0; d < oc.junctionDots.length; d++) {
+          if (oc.junctionDots[d].parentNode) {
+            oc.junctionDots[d].parentNode.removeChild(oc.junctionDots[d]);
+          }
+        }
+        oc.junctionDots = [];
       }
     }
   }
+};
+
+// Create the junction dots for a single net.
+SheetObject.prototype._drawNetJunctions = function (net) {
+  var out = net.out;
+  if (!out.junctionDots) out.junctionDots = [];
+  if (net.lines.length < 2) return;
+
+  var points = this._computeNetJunctions(net.lines);
+  var color = out.defaultColor || "black";
+  for (var i = 0; i < points.length; i++) {
+    var dot = document.createElement("div");
+    dot.className = "line-junction";
+    dot.style.position = "absolute";
+    dot.style.width = "7px";
+    dot.style.height = "7px";
+    dot.style.borderRadius = "50%";
+    dot.style.backgroundColor = color;
+    dot.style.zIndex = "1";
+    dot.style.pointerEvents = "none";
+    dot.style.left = points[i].x - 3.5 + "px";
+    dot.style.top = points[i].y - 3.5 + "px";
+    this.canvas.appendChild(dot);
+    out.junctionDots.push(dot);
+  }
+};
+
+// Find branch points of a net: a point where, within this net, three or more
+// orthogonal directions meet (a T-junction or crossing). Straight pass-throughs
+// and simple corners (degree 2) are ignored.
+SheetObject.prototype._computeNetJunctions = function (lines) {
+  var segs = [];
+  var candMap = {};
+  var cand = [];
+  var addCand = function (p) {
+    var key = Math.round(p.x) + "," + Math.round(p.y);
+    if (!candMap[key]) {
+      candMap[key] = true;
+      cand.push({ x: p.x, y: p.y });
+    }
+  };
+  for (var i = 0; i < lines.length; i++) {
+    var p = lines[i]._path;
+    if (!p || p.length < 2) continue;
+    for (var j = 0; j < p.length - 1; j++) {
+      segs.push({ ax: p[j].x, ay: p[j].y, bx: p[j + 1].x, by: p[j + 1].y });
+      addCand(p[j]);
+      addCand(p[j + 1]);
+    }
+  }
+
+  var eps = 0.5;
+  var result = [];
+  for (var c = 0; c < cand.length; c++) {
+    var P = cand[c];
+    var L = false,
+      R = false,
+      U = false,
+      D = false;
+    for (var s = 0; s < segs.length; s++) {
+      var sg = segs[s];
+      if (Math.abs(sg.ay - sg.by) < eps) {
+        // horizontal segment
+        if (Math.abs(P.y - sg.ay) < eps) {
+          var lo = Math.min(sg.ax, sg.bx);
+          var hi = Math.max(sg.ax, sg.bx);
+          if (P.x > lo - eps && P.x < hi + eps) {
+            if (P.x > lo + eps) L = true;
+            if (P.x < hi - eps) R = true;
+          }
+        }
+      } else if (Math.abs(sg.ax - sg.bx) < eps) {
+        // vertical segment
+        if (Math.abs(P.x - sg.ax) < eps) {
+          var loy = Math.min(sg.ay, sg.by);
+          var hiy = Math.max(sg.ay, sg.by);
+          if (P.y > loy - eps && P.y < hiy + eps) {
+            if (P.y > loy + eps) U = true;
+            if (P.y < hiy - eps) D = true;
+          }
+        }
+      }
+    }
+    var deg = (L ? 1 : 0) + (R ? 1 : 0) + (U ? 1 : 0) + (D ? 1 : 0);
+    if (deg >= 3) result.push(P);
+  }
+  return result;
 };
 
 SheetObject.prototype.toggleDelaySymbol = function () {
@@ -1139,6 +1315,7 @@ SheetObject.prototype._snapshotBlocks = function (blocks) {
             fromPin: o,
             toBlock: targetIdx,
             toPin: inIdx,
+            waypoints: this._serializeWaypoints(inConn.theLine),
           });
         }
       }
@@ -1215,6 +1392,11 @@ SheetObject.prototype._rebuildSnapshot = function (snapshot, dx, dy) {
       var inConn = toBlock.inConnections[conn.toPin];
       if (inConn.connectedFrom == null) {
         inConn.theLine = new LineObject(inConn, outConn);
+        inConn.theLine.waypoints = this._deserializeWaypoints(
+          conn.waypoints,
+          dx,
+          dy,
+        );
         inConn.theLine.connectTo();
         outConn.addConnector(inConn);
         inConn.connectedFrom = outConn;
@@ -1222,7 +1404,30 @@ SheetObject.prototype._rebuildSnapshot = function (snapshot, dx, dy) {
     }
   }
 
+  this.rerouteAllLines();
   return newBlocks;
+};
+
+// --- Waypoint (manual line route) serialization helpers ---
+
+SheetObject.prototype._serializeWaypoints = function (line) {
+  if (!line || !line.waypoints || line.waypoints.length === 0) return undefined;
+  var out = [];
+  for (var i = 0; i < line.waypoints.length; i++) {
+    out.push({ x: line.waypoints[i].x, y: line.waypoints[i].y });
+  }
+  return out;
+};
+
+SheetObject.prototype._deserializeWaypoints = function (wps, dx, dy) {
+  if (!wps || !wps.length) return [];
+  dx = dx || 0;
+  dy = dy || 0;
+  var out = [];
+  for (var i = 0; i < wps.length; i++) {
+    out.push({ x: wps[i].x + dx, y: wps[i].y + dy });
+  }
+  return out;
 };
 
 // Fully remove a list of blocks (connectors, lines, DOM node) from the sheet.
@@ -1480,6 +1685,7 @@ SheetObject.prototype.saveProject = function () {
             fromPin: o,
             toBlock: targetIdx,
             toPin: inIdx,
+            waypoints: this._serializeWaypoints(inConn.theLine),
           });
         }
       }
@@ -1731,6 +1937,7 @@ SheetObject.prototype._restoreProject = function (project) {
 
       if (inConn.connectedFrom == null) {
         inConn.theLine = new LineObject(inConn, outConn);
+        inConn.theLine.waypoints = this._deserializeWaypoints(conn.waypoints);
         inConn.theLine.connectTo();
         outConn.addConnector(inConn);
         inConn.connectedFrom = outConn;
@@ -1741,6 +1948,9 @@ SheetObject.prototype._restoreProject = function (project) {
   // Step 4: Restore sheet settings (after blocks/lines exist so visual
   // toggles such as snap visibility and exec-order numbers apply correctly)
   this._applySettings(project.settings);
+
+  // Final overlap-aware reroute (auto-routed lines only; manual routes kept).
+  this.rerouteAllLines();
 };
 
 // --- Copy / Paste ---
@@ -1778,6 +1988,7 @@ SheetObject.prototype.copySelection = function () {
             fromPin: o,
             toBlock: targetSelIdx,
             toPin: inIdx,
+            waypoints: this._serializeWaypoints(inConn.theLine),
           });
         }
       }
@@ -1882,6 +2093,11 @@ SheetObject.prototype.pasteClipboard = function () {
       // Only connect if input isn't already connected
       if (inConn.connectedFrom == null) {
         inConn.theLine = new LineObject(inConn, outConn);
+        inConn.theLine.waypoints = this._deserializeWaypoints(
+          conn.waypoints,
+          offset,
+          offset,
+        );
         inConn.theLine.connectTo();
         outConn.addConnector(inConn);
         inConn.connectedFrom = outConn;
@@ -1889,10 +2105,22 @@ SheetObject.prototype.pasteClipboard = function () {
     }
   }
 
-  // Increase offset for next paste
+  // Overlap-aware reroute of auto-routed lines (manual routes are preserved).
+  this.rerouteAllLines();
+
+  // Increase offset for next paste, keeping stored waypoints in sync.
   for (var i = 0; i < this._clipboard.blocks.length; i++) {
     this._clipboard.blocks[i].left += offset;
     this._clipboard.blocks[i].top += offset;
+  }
+  for (var k = 0; k < this._clipboard.connections.length; k++) {
+    var wps = this._clipboard.connections[k].waypoints;
+    if (wps) {
+      for (var w = 0; w < wps.length; w++) {
+        wps[w].x += offset;
+        wps[w].y += offset;
+      }
+    }
   }
 };
 
@@ -2041,6 +2269,12 @@ SheetObject.prototype.toggleSimulate = function () {
         var outConn = block.outConnections[o];
         outConn.theConnector.style.backgroundColor = outConn.defaultColor;
         if (outConn.inverted) outConn.invertCircle.style.borderColor = "black";
+        if (outConn.junctionDots) {
+          for (var jd = 0; jd < outConn.junctionDots.length; jd++) {
+            outConn.junctionDots[jd].style.backgroundColor =
+              outConn.defaultColor;
+          }
+        }
         for (var c = 0; c < outConn.connectedTo.length; c++) {
           if (outConn.connectedTo[c].theLine) {
             outConn.connectedTo[c].theLine.changeColor(outConn.defaultColor);
@@ -2065,6 +2299,13 @@ SheetObject.prototype.doubleClickHandler = function (e) {
     return;
   if (e.altKey) return; // Alt is used for panning
   if (!this.canvas.contains(e.target) && e.target !== this.canvas) return; // Click outside canvas
+
+  // Double-clicking a connection line (segment or waypoint handle) is handled
+  // by the line itself (adds a waypoint) — don't drop a new block here.
+  if (e.target && e.target.className) {
+    var cn = "" + e.target.className;
+    if (cn.indexOf("line-seg") >= 0 || cn.indexOf("line-waypoint") >= 0) return;
+  }
 
   // Check if dblclick happened on an existing block
   for (var i = 0; i < this.blockObjects.length; i++) {
@@ -2270,6 +2511,7 @@ SheetObject.prototype.keyDownHandler = function (e) {
       }
     }
     this._updateSelCoords();
+    this.rerouteAllLines();
     return;
   }
 
@@ -2300,6 +2542,9 @@ SheetObject.prototype.keyDownHandler = function (e) {
     // Reindex block array
     for (var x = 0; x < this.blockObjects.length; x++)
       this.blockObjects[x].indexNumber = x;
+
+    // Reroute so remaining nets and their junction dots update.
+    this.rerouteAllLines();
   }
 };
 

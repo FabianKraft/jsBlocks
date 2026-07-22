@@ -266,6 +266,11 @@ Base.prototype.mouseupHandler = function (e) {
       }
       this._groupOffsets = null;
     }
+    // Blocks settled → recompute all line routes so none overlap.
+    if (this.hasMoved && this.sheetObject.rerouteAllLines) {
+      this.sheetObject.rerouteAllLines();
+    }
+    this.hasMoved = 0;
   } else {
     this.captured = 0;
     this.sheetObject.turnOnSelect();

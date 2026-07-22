@@ -217,6 +217,8 @@ Connector.prototype.mouseupHandler = function (e) {
       this.theLine.connectTo();
       this.instruction.sheetObject.currentConnector.addConnector(this);
       this.connectedFrom = this.instruction.sheetObject.currentConnector;
+      // Overlap-aware reroute so the new line finds a free lane.
+      this.instruction.sheetObject.rerouteAllLines();
     }
   }
   this.instruction.sheetObject.currentConnector = null;
@@ -264,6 +266,15 @@ Connector.prototype.removeConnectedFrom = function () {
       this.connectedTo[i].theLine.removeLine();
       this.connectedTo[i].connectedFrom = null;
     }
+  }
+  // Remove this net's junction dots from the canvas.
+  if (this.junctionDots) {
+    for (var jd = 0; jd < this.junctionDots.length; jd++) {
+      if (this.junctionDots[jd].parentNode) {
+        this.junctionDots[jd].parentNode.removeChild(this.junctionDots[jd]);
+      }
+    }
+    this.junctionDots = [];
   }
   this.instruction.sheetObject.canvas.removeChild(this.theConnector);
   this.instruction.sheetObject.canvas.removeChild(this.hitbox);
