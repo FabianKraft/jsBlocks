@@ -69,6 +69,9 @@ function SheetObject() {
   // Orthogonal A* router for connection lines (obstacle + overlap aware).
   this.lineRouter = new LineRouter(this);
 
+  // Cross-reference panel (tag/label lookup, docked bottom-right).
+  this.crossRef = new CrossRef(this);
+
   // Project name (used in the saved file and its filename).
   this.projectName = "";
 
@@ -2302,6 +2305,7 @@ SheetObject.prototype.blockSelected = function (obj, shiftKey) {
     this.selectedBlocks.push(obj);
   }
   this.currentInstr = obj;
+  this._onSelectionChanged();
 };
 SheetObject.prototype.turnOffSelect = function () {
   this.selectBox = 0;
@@ -2326,6 +2330,14 @@ SheetObject.prototype.deselectAll = function () {
   }
   this.selectedLines = [];
   this.currentLine = null;
+  this._onSelectionChanged();
+};
+
+// Notify dependents (currently the cross-reference panel) that the set of
+// selected blocks changed. Cheap and safe to over-call; the panel ignores it
+// while hidden.
+SheetObject.prototype._onSelectionChanged = function () {
+  if (this.crossRef) this.crossRef.onSelectionChanged();
 };
 SheetObject.prototype.clickHandler = function (e) {
   // Clicking on white space - no action needed

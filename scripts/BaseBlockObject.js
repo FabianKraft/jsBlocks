@@ -270,6 +270,10 @@ Base.prototype.mouseupHandler = function (e) {
     if (this.hasMoved && this.sheetObject.rerouteAllLines) {
       this.sheetObject.rerouteAllLines();
     }
+    // Positions changed → refresh cross-reference positions/pages.
+    if (this.hasMoved && this.sheetObject.crossRef) {
+      this.sheetObject.crossRef.refresh();
+    }
     this.hasMoved = 0;
   } else {
     this.captured = 0;
@@ -332,6 +336,9 @@ Base.showModal = function (contentHTML, onSave, onCancel) {
   document.getElementById("modalSave").addEventListener("click", function () {
     overlay.classList.remove("visible");
     if (onSave) onSave();
+    // A settings edit may have changed a tag/label/comment — keep the
+    // cross-reference panel in sync.
+    if (window.my_Sheet && my_Sheet.crossRef) my_Sheet.crossRef.refresh();
   });
   document.getElementById("modalCancel").addEventListener("click", function () {
     overlay.classList.remove("visible");

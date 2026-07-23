@@ -63,6 +63,11 @@
             language="javascript"
             src="scripts/PdfExport.js"
         ></script>
+        <script
+            type="text/javascript"
+            language="javascript"
+            src="scripts/CrossRef.js"
+        ></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <style>
             body {
@@ -778,6 +783,105 @@
                 border-radius: 3px;
                 background: #e0e0e0;
             }
+            /* Cross-reference panel (docked bottom-right, non-modal) */
+            #crossRefButton.active {
+                background: #d0e3ff;
+                border-color: #4a90d9;
+            }
+            #crossRefPanel {
+                display: none;
+                position: fixed;
+                right: 12px;
+                bottom: 12px;
+                width: 460px;
+                max-width: calc(100vw - 24px);
+                max-height: 45vh;
+                background: #ffffff;
+                border: 1px solid #888;
+                border-radius: 5px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+                z-index: 1100;
+                font-family: Calibri, Arial, sans-serif;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            #crossRefPanel.visible {
+                display: flex;
+            }
+            #crossRefHeader {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 5px 6px 5px 10px;
+                background: #f0f0f0;
+                border-bottom: 1px solid #ccc;
+                font-size: 12px;
+                font-weight: bold;
+                cursor: default;
+            }
+            #crossRefClose {
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                font-size: 12px;
+                color: #666;
+                padding: 2px 6px;
+                border-radius: 3px;
+            }
+            #crossRefClose:hover {
+                background: #e0e0e0;
+                color: #000;
+            }
+            #crossRefBody {
+                overflow: auto;
+            }
+            #crossRefTable {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12px;
+            }
+            #crossRefTable th {
+                position: sticky;
+                top: 0;
+                background: #fafafa;
+                border-bottom: 1px solid #ddd;
+                text-align: left;
+                padding: 4px 8px;
+                font-weight: bold;
+                color: #555;
+                white-space: nowrap;
+            }
+            #crossRefTable td {
+                padding: 3px 8px;
+                border-bottom: 1px solid #eee;
+                white-space: nowrap;
+            }
+            #crossRefTable tbody tr:not(.crossref-empty) {
+                cursor: pointer;
+            }
+            #crossRefTable tbody tr:not(.crossref-empty):hover {
+                background: #e8f0fe;
+            }
+            #crossRefTable tr.crossref-group td {
+                border-top: 2px solid #d0d0d0;
+            }
+            #crossRefTable td.crossref-comment {
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: #666;
+            }
+            #crossRefTable td.crossref-pos {
+                font-family: monospace;
+                font-size: 11px;
+                color: #444;
+            }
+            #crossRefTable tr.crossref-empty td {
+                padding: 12px;
+                text-align: center;
+                color: #999;
+                cursor: default;
+            }
         </style>
     </head>
     <body>
@@ -1057,6 +1161,15 @@
             </button>
             <div class="shortcut-sep"></div>
             <button
+                id="crossRefButton"
+                class="shortcut-btn"
+                onclick="my_Sheet.crossRef.toggle()"
+                title="Cross-reference list (tags & labels)"
+                style="font-size: 11px; font-weight: bold"
+            >
+                &#128269; Querverweise
+            </button>
+            <button
                 id="helpButton"
                 class="shortcut-btn toolbar-icon-btn"
                 onclick="my_Sheet.toggleKeybinds()"
@@ -1087,6 +1200,32 @@
         </div>
         <div id="viewport">
             <div id="canvas" class="show-grid"></div>
+        </div>
+        <div id="crossRefPanel">
+            <div id="crossRefHeader">
+                <span id="crossRefTitle">Querverweise</span>
+                <button
+                    id="crossRefClose"
+                    onclick="my_Sheet.crossRef.hide()"
+                    title="Close"
+                >
+                    &#10006;
+                </button>
+            </div>
+            <div id="crossRefBody">
+                <table id="crossRefTable">
+                    <thead>
+                        <tr>
+                            <th>Typ</th>
+                            <th>Tagname</th>
+                            <th>Kommentar</th>
+                            <th>Seite</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody id="crossRefRows"></tbody>
+                </table>
+            </div>
         </div>
         <div
             id="settingsOverlay"
