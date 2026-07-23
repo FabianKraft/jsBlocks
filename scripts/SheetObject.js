@@ -1178,6 +1178,66 @@ SheetObject.prototype._showPageContextMenu = function (
   window.addEventListener("blur", this._pageContextMenuCloser);
 };
 
+// Parse a page selection like "2, 4, 7-10" into a de-duplicated list of page
+// numbers, in the order they were entered. Ranges are inclusive and may be
+// written in either direction ("10-7" == "7-10"). Returns either
+// { targets: [...] } or { error: "..." } for the caller to report.
+//
+// The source page is silently dropped when it only appears inside a range —
+// "copy page 3 onto 1-10" plainly means the other nine pages — but naming it
+// on its own stays an error, because that is a mistake rather than shorthand.
+SheetObject.prototype._parsePageSelection = function (raw, max, sourcePage) {
+  var parts = String(raw == null ? "" : raw).split(",");
+  var targets = [];
+
+  var addTarget = function (n) {
+    if (targets.indexOf(n) === -1) targets.push(n);
+  };
+  var outOfRange = function (n) {
+    return n < 1 || n > max;
+  };
+
+  for (var i = 0; i < parts.length; i++) {
+    var part = parts[i].trim();
+    if (part === "") continue;
+
+    var range = part.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (range) {
+      var from = parseInt(range[1], 10);
+      var to = parseInt(range[2], 10);
+      if (from > to) {
+        var swap = from;
+        from = to;
+        to = swap;
+      }
+      if (outOfRange(from) || outOfRange(to)) {
+        return {
+          error:
+            'Range "' + part + '" is out of range (1–' + max + ").",
+        };
+      }
+      for (var n = from; n <= to; n++) {
+        if (n !== sourcePage) addTarget(n);
+      }
+      continue;
+    }
+
+    if (!/^\d+$/.test(part)) {
+      return { error: 'Invalid page number: "' + part + '"' };
+    }
+    var single = parseInt(part, 10);
+    if (outOfRange(single)) {
+      return { error: "Page " + single + " is out of range (1–" + max + ")." };
+    }
+    if (single === sourcePage) {
+      return { error: "Target page must differ from the source page." };
+    }
+    addTarget(single);
+  }
+
+  return { targets: targets };
+};
+
 // Build and show the Copy/Move dialog. mode is "copy" or "move".
 SheetObject.prototype._openPageTransferDialog = function (mode, sourcePage) {
   var grid = this._getPageGrid();
@@ -1186,7 +1246,7 @@ SheetObject.prototype._openPageTransferDialog = function (mode, sourcePage) {
   var isCopy = mode === "copy";
   var title = isCopy ? "Copy Page" : "Move Page";
   var targetHint = isCopy
-    ? "Target page(s) — comma separated, e.g. 2, 4"
+    ? "Target page(s) — comma separated, ranges allowed, e.g. 2, 4, 7-10"
     : "Target page";
 
   var html =
@@ -1202,7 +1262,7 @@ SheetObject.prototype._openPageTransferDialog = function (mode, sourcePage) {
     '<div class="modal-row">' +
     "<label>Target</label>" +
     '<input type="text" id="pageTransferTarget" placeholder="' +
-    (isCopy ? "e.g. 2, 4, 5" : "e.g. 3") +
+    (isCopy ? "e.g. 2, 4, 7-10" : "e.g. 3") +
     '" />' +
     "</div>" +
     '<div style="font-size:11px;color:#888;margin:-4px 0 8px 108px;">' +
@@ -1222,27 +1282,13 @@ SheetObject.prototype._openPageTransferDialog = function (mode, sourcePage) {
       "pageTransferDestructive",
     ).checked;
 
-    // Parse target page numbers
-    var parts = raw.split(",");
-    var targets = [];
-    for (var i = 0; i < parts.length; i++) {
-      var t = parts[i].trim();
-      if (t === "") continue;
-      var n = parseInt(t, 10);
-      if (isNaN(n)) {
-        alert('Invalid page number: "' + t + '"');
-        return;
-      }
-      if (n < 1 || n > grid.count) {
-        alert("Page " + n + " is out of range (1–" + grid.count + ").");
-        return;
-      }
-      if (n === sourcePage) {
-        alert("Target page must differ from the source page.");
-        return;
-      }
-      if (targets.indexOf(n) === -1) targets.push(n);
+    // Parse target page numbers — single pages and ranges ("2, 4, 7-10")
+    var parsed = sheet._parsePageSelection(raw, grid.count, sourcePage);
+    if (parsed.error) {
+      alert(parsed.error);
+      return;
     }
+    var targets = parsed.targets;
 
     if (targets.length === 0) {
       alert("Please enter at least one target page.");
