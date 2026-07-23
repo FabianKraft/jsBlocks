@@ -1458,6 +1458,69 @@ SheetObject.prototype._deleteBlocks = function (blocks) {
 
 // --- PDF Export ---
 
+// Bounding boxes (in canvas coordinates) of everything that counts as drawing
+// content: the blocks plus the routed connection lines and their junction dots.
+// Page markings are deliberately left out — they span the whole sheet and would
+// make every single page look occupied. Layout offsets are used rather than the
+// inline styles because line segments carry no inline width/height and the
+// offsets are unaffected by the canvas zoom transform.
+SheetObject.prototype._contentRects = function () {
+  var rects = [];
+  var add = function (el) {
+    if (!el) return;
+    rects.push({
+      left: el.offsetLeft,
+      top: el.offsetTop,
+      // A horizontal or vertical line segment is 0/1px thin; keep a minimal
+      // extent so it still intersects the page it runs through.
+      right: el.offsetLeft + (el.offsetWidth || 1),
+      bottom: el.offsetTop + (el.offsetHeight || 1),
+    });
+  };
+
+  for (var i = 0; i < this.blockObjects.length; i++) {
+    if (this.blockObjects[i]) add(this.blockObjects[i].divObj);
+  }
+  var wires = this.canvas.querySelectorAll(".line-seg, .line-junction");
+  for (var w = 0; w < wires.length; w++) add(wires[w]);
+
+  return rects;
+};
+
+// Pages of the given format that actually carry content, in reading order.
+// Empty pages are skipped so the PDF only contains sheets that show something.
+SheetObject.prototype._pagesWithContent = function (fmt) {
+  var canvasW = parseInt(this.canvas.style.width) || 10000;
+  var canvasH = parseInt(this.canvas.style.height) || 10000;
+  var cols = Math.floor(canvasW / fmt.w);
+  var rows = Math.floor(canvasH / fmt.h);
+  var rects = this._contentRects();
+  var pages = [];
+
+  for (var r = 0; r < rows; r++) {
+    for (var c = 0; c < cols; c++) {
+      var left = c * fmt.w;
+      var top = r * fmt.h;
+      var right = left + fmt.w;
+      var bottom = top + fmt.h;
+
+      for (var i = 0; i < rects.length; i++) {
+        var q = rects[i];
+        if (
+          q.left < right &&
+          q.right > left &&
+          q.top < bottom &&
+          q.bottom > top
+        ) {
+          pages.push({ row: r, col: c, left: left, top: top });
+          break;
+        }
+      }
+    }
+  }
+  return pages;
+};
+
 SheetObject.prototype.printPDF = function () {
   var format = this.currentPageFormat;
   if (!format || format === "none") return;
@@ -1465,47 +1528,17 @@ SheetObject.prototype.printPDF = function () {
   var fmt = this.PAGE_FORMATS[format];
   if (!fmt) return;
 
-  var canvasW = parseInt(this.canvas.style.width) || 10000;
-  var canvasH = parseInt(this.canvas.style.height) || 10000;
-  var cols = Math.floor(canvasW / fmt.w);
-  var rows = Math.floor(canvasH / fmt.h);
-
-  // Find pages that contain blocks
-  var pagesWithContent = [];
-  for (var r = 0; r < rows; r++) {
-    for (var c = 0; c < cols; c++) {
-      var pageLeft = c * fmt.w;
-      var pageTop = r * fmt.h;
-      var pageRight = pageLeft + fmt.w;
-      var pageBottom = pageTop + fmt.h;
-
-      var hasContent = false;
-      for (var b = 0; b < this.blockObjects.length; b++) {
-        var blk = this.blockObjects[b];
-        var bLeft = parseInt(blk.divObj.style.left);
-        var bTop = parseInt(blk.divObj.style.top);
-        var bRight = bLeft + parseInt(blk.divObj.style.width);
-        var bBottom = bTop + parseInt(blk.divObj.style.height);
-        if (
-          bLeft < pageRight &&
-          bRight > pageLeft &&
-          bTop < pageBottom &&
-          bBottom > pageTop
-        ) {
-          hasContent = true;
-          break;
-        }
-      }
-      if (hasContent) {
-        pagesWithContent.push({ row: r, col: c, left: pageLeft, top: pageTop });
-      }
-    }
-  }
+  var pagesWithContent = this._pagesWithContent(fmt);
 
   if (pagesWithContent.length === 0) {
     alert("No content to print.");
     return;
   }
+
+  // One export at a time — a second run would capture the already-neutralized
+  // transform as its "saved" state and leave the canvas unzoomed afterwards.
+  if (this._pdfExportRunning) return;
+  this._pdfExportRunning = true;
 
   // Temporarily hide markings and grid, reset transform for capture
   var hadGrid = this.canvas.classList.contains("show-grid");
@@ -1518,15 +1551,41 @@ SheetObject.prototype.printPDF = function () {
   var pageIndex = 0;
   var orientation = fmt.orient === "landscape" ? "l" : "p";
   var pdfFormat = format.indexOf("a3") === 0 ? "a3" : "a4";
-  var pdf = new jspdf.jsPDF(orientation, "mm", pdfFormat);
+  // compress:true is essential: jsPDF cannot embed html2canvas' RGBA PNGs
+  // directly, so it falls back to raw pixel data (~16 MB per A4 page at
+  // scale 2). Flate-compressing the streams brings a page back to ~30 KB —
+  // without it a multi-page export builds a document string of hundreds of
+  // megabytes and the download silently never happens.
+  var pdf = new jspdf.jsPDF({
+    orientation: orientation,
+    unit: "mm",
+    format: pdfFormat,
+    compress: true,
+  });
+
+  function restoreCanvas() {
+    sheet.canvas.style.transform = savedTransform;
+    if (hadGrid) sheet.canvas.classList.add("show-grid");
+    sheet.setPageFormat(sheet.currentPageFormat);
+    sheet._pdfExportRunning = false;
+  }
+
+  function fail(stage, err) {
+    restoreCanvas();
+    alert(
+      "PDF export failed (" + stage + "): " + ((err && err.message) || err),
+    );
+  }
 
   function renderNextPage() {
     if (pageIndex >= pagesWithContent.length) {
-      // Done — restore and save
-      sheet.canvas.style.transform = savedTransform;
-      if (hadGrid) sheet.canvas.classList.add("show-grid");
-      sheet.setPageFormat(sheet.currentPageFormat);
-      pdf.save("jsblocks_print.pdf");
+      // Done — restore first so the sheet is usable even if saving throws
+      restoreCanvas();
+      try {
+        pdf.save(sheet._pdfFilename());
+      } catch (err) {
+        alert("PDF export failed (save): " + ((err && err.message) || err));
+      }
       return;
     }
 
@@ -1545,20 +1604,37 @@ SheetObject.prototype.printPDF = function () {
         if (pageIndex > 0) {
           pdf.addPage(pdfFormat, orientation);
         }
-        var imgData = pageCanvas.toDataURL("image/png");
-        pdf.addImage(imgData, "PNG", 0, 0, fmt.pdfW, fmt.pdfH);
+        pdf.addImage(
+          pageCanvas.toDataURL("image/png"),
+          "PNG",
+          0,
+          0,
+          fmt.pdfW,
+          fmt.pdfH,
+        );
+        // Release the page bitmap (~16 MB) before capturing the next one.
+        pageCanvas.width = pageCanvas.height = 0;
         pageIndex++;
-        renderNextPage();
+        // Continue outside the promise chain so it does not grow per page
+        // and the browser can repaint between pages.
+        setTimeout(renderNextPage, 0);
       })
       .catch(function (err) {
-        alert("Error rendering page: " + err.message);
-        sheet.canvas.style.transform = savedTransform;
-        if (hadGrid) sheet.canvas.classList.add("show-grid");
-        sheet.setPageFormat(sheet.currentPageFormat);
+        fail("page " + (pageIndex + 1), err);
       });
   }
 
   renderNextPage();
+};
+
+// Filename for the exported PDF, following the same convention as saveProject:
+// jsblocks_<project name>_<timestamp>.pdf (name omitted when it is not set).
+SheetObject.prototype._pdfFilename = function () {
+  var clean = this._sanitizeFilename(this.projectName);
+  var ts = this._timestampString();
+  return clean
+    ? "jsblocks_" + clean + "_" + ts + ".pdf"
+    : "jsblocks_" + ts + ".pdf";
 };
 
 SheetObject.prototype.toggleKeybinds = function () {
