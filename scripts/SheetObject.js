@@ -1586,22 +1586,19 @@ SheetObject.prototype.printPDF = function () {
   if (this._pdfExportRunning) return;
   this._pdfExportRunning = true;
 
-  // Temporarily hide markings and grid, reset transform for capture
+  // Neutralize editor-only state so the exported geometry matches a clean sheet:
+  // hide the grid and page markings, drop selection handles, and remove the zoom
+  // transform so 1 canvas px reads as 1 px while measuring element boxes.
   var hadGrid = this.canvas.classList.contains("show-grid");
   this.canvas.classList.remove("show-grid");
   this._clearPageMarkings();
+  this.deselectAll();
   var savedTransform = this.canvas.style.transform;
   this.canvas.style.transform = "none";
 
-  var sheet = this;
-  var pageIndex = 0;
   var orientation = fmt.orient === "landscape" ? "l" : "p";
   var pdfFormat = format.indexOf("a3") === 0 ? "a3" : "a4";
-  // compress:true is essential: jsPDF cannot embed html2canvas' RGBA PNGs
-  // directly, so it falls back to raw pixel data (~16 MB per A4 page at
-  // scale 2). Flate-compressing the streams brings a page back to ~30 KB —
-  // without it a multi-page export builds a document string of hundreds of
-  // megabytes and the download silently never happens.
+  // compress:true keeps the (already tiny) vector streams flate-compressed.
   var pdf = new jspdf.jsPDF({
     orientation: orientation,
     unit: "mm",
@@ -1609,68 +1606,35 @@ SheetObject.prototype.printPDF = function () {
     compress: true,
   });
 
-  function restoreCanvas() {
-    sheet.canvas.style.transform = savedTransform;
-    if (hadGrid) sheet.canvas.classList.add("show-grid");
-    sheet.setPageFormat(sheet.currentPageFormat);
-    sheet._pdfExportRunning = false;
-  }
+  var restored = false;
+  var restoreCanvas = function () {
+    if (restored) return;
+    restored = true;
+    this.canvas.style.transform = savedTransform;
+    if (hadGrid) this.canvas.classList.add("show-grid");
+    this.setPageFormat(this.currentPageFormat);
+    this._pdfExportRunning = false;
+  }.bind(this);
 
-  function fail(stage, err) {
+  try {
+    var renderer = new PdfVectorRenderer(this);
+    renderer.render(pdf, pagesWithContent, fmt, function () {
+      pdf.addPage(pdfFormat, orientation);
+    });
+  } catch (err) {
     restoreCanvas();
-    alert(
-      "PDF export failed (" + stage + "): " + ((err && err.message) || err),
-    );
+    alert("PDF export failed (render): " + ((err && err.message) || err));
+    return;
   }
 
-  function renderNextPage() {
-    if (pageIndex >= pagesWithContent.length) {
-      // Done — restore first so the sheet is usable even if saving throws
-      restoreCanvas();
-      try {
-        pdf.save(sheet._pdfFilename());
-      } catch (err) {
-        alert("PDF export failed (save): " + ((err && err.message) || err));
-      }
-      return;
-    }
-
-    var page = pagesWithContent[pageIndex];
-
-    html2canvas(sheet.canvas, {
-      x: page.left,
-      y: page.top,
-      width: fmt.w,
-      height: fmt.h,
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-    })
-      .then(function (pageCanvas) {
-        if (pageIndex > 0) {
-          pdf.addPage(pdfFormat, orientation);
-        }
-        pdf.addImage(
-          pageCanvas.toDataURL("image/png"),
-          "PNG",
-          0,
-          0,
-          fmt.pdfW,
-          fmt.pdfH,
-        );
-        // Release the page bitmap (~16 MB) before capturing the next one.
-        pageCanvas.width = pageCanvas.height = 0;
-        pageIndex++;
-        // Continue outside the promise chain so it does not grow per page
-        // and the browser can repaint between pages.
-        setTimeout(renderNextPage, 0);
-      })
-      .catch(function (err) {
-        fail("page " + (pageIndex + 1), err);
-      });
+  // Restore the editor before saving so the sheet stays usable even if the
+  // browser's download step throws.
+  restoreCanvas();
+  try {
+    pdf.save(this._pdfFilename());
+  } catch (err) {
+    alert("PDF export failed (save): " + ((err && err.message) || err));
   }
-
-  renderNextPage();
 };
 
 // Filename for the exported PDF, following the same convention as saveProject:

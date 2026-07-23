@@ -63,7 +63,7 @@ jsBlocks is a browser-based simulator for designing and simulating Function Bloc
 ### Save, Load, and Export
 
 - **Save and Load Projects** — Export to JSON file and import back. Preserves all blocks, connections, inversions, custom block definitions, and block properties.
-- **PDF Export** — Export canvas to multi-page PDF with page format options (A4/A3, portrait/landscape). Uses [html2canvas](https://html2canvas.hertzen.com/) and [jsPDF](https://github.com/parallax/jsPDF) from CDN.
+- **PDF Export** — Export canvas to multi-page PDF with page format options (A4/A3, portrait/landscape). Only pages that contain content are exported. Rendered as true vector graphics (crisp at any zoom, selectable text, tiny files) via [jsPDF](https://github.com/parallax/jsPDF) from CDN.
 
 ### Customization
 
@@ -313,7 +313,7 @@ jsBlocks/
 - Canvas uses CSS `transform: translate() scale()` for pan and zoom.
 - Custom blocks are stored in `localStorage` and persist across sessions.
 - Project files use a JSON schema with `version`, `blocks`, `connections`, and `customDefinitions` fields.
-- External CDN dependencies (for PDF export only): [html2canvas](https://html2canvas.hertzen.com/) and [jsPDF](https://github.com/parallax/jsPDF).
+- External CDN dependency (for PDF export only): [jsPDF](https://github.com/parallax/jsPDF). The sheet is walked and drawn as PDF vector primitives by `scripts/PdfExport.js` — no rasterization library is needed.
 
 ---
 
