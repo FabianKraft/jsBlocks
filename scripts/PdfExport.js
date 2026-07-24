@@ -44,20 +44,25 @@ function PdfVectorRenderer(sheet) {
 PdfVectorRenderer.MM_PER_PT = 0.352777778;
 
 // jsPDF's built-in fonts use WinAnsi (Latin-1) encoding, which covers ASCII and
-// accented Latin (umlauts, ß, é, …) but not typographic/technical symbols. Map
+// accented Latin (umlauts, sharp-s, accents) but not typographic symbols. Map
 // the ones block labels actually use to ASCII equivalents; any remaining
 // character above U+00FF is replaced with "?" so the output stays clean instead
 // of rendering corrupted glyphs. (A future Unicode font could be embedded to
 // support arbitrary scripts in comments and custom labels.)
-PdfVectorRenderer.SYMBOLS = {
-  "≥": ">=",
-  "≤": "<=",
-  "≠": "!=",
-  "→": "->",
-  "←": "<-",
-  "±": "+/-",
-  " ": " ",
-};
+// Symbols jsPDF's Latin-1 fonts cannot encode, mapped to ASCII equivalents.
+// Built with String.fromCharCode so this source stays pure ASCII: the mapping
+// then works even if the file is served or opened under the wrong character
+// encoding (the failure mode that turned the Or-gate label into "?1").
+PdfVectorRenderer.SYMBOLS = {};
+(function (S) {
+  S[String.fromCharCode(0x2265)] = ">="; // greater-or-equal (Or gate)
+  S[String.fromCharCode(0x2264)] = "<="; // less-or-equal
+  S[String.fromCharCode(0x2260)] = "!="; // not-equal
+  S[String.fromCharCode(0x2192)] = "->"; // right arrow
+  S[String.fromCharCode(0x2190)] = "<-"; // left arrow
+  S[String.fromCharCode(0x00b1)] = "+/-"; // plus-minus
+  S[String.fromCharCode(0x00a0)] = " "; // non-breaking space
+})(PdfVectorRenderer.SYMBOLS);
 
 // Classes that are pure editor chrome and must never appear in the export.
 PdfVectorRenderer.SKIP_CLASSES = {
