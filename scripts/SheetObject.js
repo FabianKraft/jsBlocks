@@ -1570,6 +1570,16 @@ SheetObject.prototype._pagesWithContent = function (fmt) {
   return pages;
 };
 
+// Export the current logic as a ready-to-import Node-RED Function node.
+// Delegates to the standalone NodeRedExport module (see scripts/NodeRedExport.js).
+SheetObject.prototype.exportNodeRed = function () {
+  if (typeof NodeRedExport === "undefined") {
+    alert("Node-RED export module not loaded.");
+    return;
+  }
+  NodeRedExport.export(this);
+};
+
 SheetObject.prototype.printPDF = function () {
   var format = this.currentPageFormat;
   if (!format || format === "none") return;

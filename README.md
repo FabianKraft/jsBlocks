@@ -64,6 +64,7 @@ jsBlocks is a browser-based simulator for designing and simulating Function Bloc
 
 - **Save and Load Projects** — Export to JSON file and import back. Preserves all blocks, connections, inversions, custom block definitions, and block properties.
 - **PDF Export** — Export canvas to multi-page PDF with page format options (A4/A3, portrait/landscape). Only pages that contain content are exported. Rendered as true vector graphics (crisp at any zoom, selectable text, tiny files) via [jsPDF](https://github.com/parallax/jsPDF) from CDN.
+- **Node-RED Export** — Export the logic as a ready-to-import [Node-RED](https://nodered.org/) **Function node** (the `NR` toolbar button). See [Node-RED Export](#node-red-export) below.
 
 ### Customization
 
@@ -282,7 +283,10 @@ jsBlocks/
 │   ├── FunctionBlockObjects.js       # All 40+ built-in block implementations
 │   ├── ConnectorObject.js            # Connector (pin) logic and rendering
 │   ├── LineObject.js                 # Wire rendering and routing
-│   └── CustomBlock.js                # Custom block editor, manager, and runtime
+│   ├── CustomBlock.js                # Custom block editor, manager, and runtime
+│   ├── PdfExport.js                  # Vector PDF exporter
+│   ├── NodeRedExport.js              # Node-RED Function-node exporter
+│   └── __tests__/                    # Headless tests (node --test)
 ├── templates/
 │   ├── templates.json                # Template index file
 │   ├── and_gate_layout.json          # AND gate example
@@ -300,6 +304,45 @@ jsBlocks/
 ├── jsBlocksModules.md                # Module refactoring guide (future plans)
 └── README.md                         # This file
 ```
+
+---
+
+## Node-RED Export
+
+The **`NR`** toolbar button exports the current logic as a [Node-RED](https://nodered.org/) clipboard flow containing a **single, self-contained Function node**. In Node-RED, use **Import → paste the JSON → Import**, and drop the ready node onto a flow. No manual editing is required.
+
+### How the exported node behaves
+
+- **Name** — the exported Function node is named after the project.
+- **Inputs** — `DI`/`AI` blocks are driven by incoming messages: `msg.topic` selects the tag, `msg.payload` its value. Example: `{ topic: "S1", payload: true }` sets the `DI` tagged `S1`. The latest value per tag is held in a process image (like a PLC I/O table); messages are not queued.
+- **Scan loop** — an internal `setInterval` re-evaluates all blocks once per cycle, in the same execution order as the simulator, using the project's configured simulation cycle (floored at 10 ms). It starts automatically on deploy (*On Start*) and stops cleanly on redeploy (*On Stop*).
+- **Timers** — use real wall-clock time, so `TON`/`TOF`/etc. stay accurate regardless of the scan interval. (Accelerated simulation is intentionally not supported.)
+- **Outputs** — `DO`/`AQ` blocks emit a message in the same shape as the inputs (`{ topic, payload }`) **only when their value changes**, keeping the flow quiet.
+
+### Robustness
+
+- **Single source of truth** — every block's emitted logic lives in one registry (`BLOCK_REGISTRY` in `scripts/NodeRedExport.js`).
+- **Fails loud, never silent** — if the sheet contains a block the exporter does not yet support, the export **aborts** and lists the offending blocks instead of generating a subtly wrong node.
+- **Headless tests** — `scripts/__tests__/nodeRedExport.test.js` executes the generated node against IEC 61131-3 semantics. Run with:
+
+  ```bash
+  node --test scripts/__tests__/nodeRedExport.test.js
+  ```
+
+### Currently supported blocks
+
+- **I/O:** `DI`, `DO`, `AI`, `AQ`
+- **Bit logic:** `AND`, `OR`, `XOR`, `NOT`, `SR`, `RS`, `R_TRIG`, `F_TRIG`
+- **Timers:** `TON`, `TOF`, `TONR`, `1 SEC TIMER` (real wall-clock; ms except `1 SEC TIMER` in seconds)
+- **Math:** `ADD`, `SUB`, `MUL`, `DIV`, `INT_TO_REAL`, `REAL_TO_INT`
+- **Analog:** `NORM_X`, `SCALE_X`, `LIMIT`, `MOVE`, `AIN`, `1ST ORDER` (first-order lag), `MUX`, `DEMUX`, `SELECT`
+- **Comparators:** `CMP`, `GT`, `LT`, `IN_RANGE`, `OUT_OF_RANGE`
+- **Word/bit:** `PACK 16`, `UNPACK 16`
+- **Values:** `Constant`, `Variable` (display-only sink)
+- **Cross-page connectors:** `Junction`, `Label In/Out (Panel)`, `Tag Label In/Out`, `Jump In/Out` — resolved to named in-memory signal buses
+- **Custom blocks** — the user's JavaScript body is inlined verbatim (same `__in`/`__out`/`__state` contract as the editor), with state bound to the node's context. Unsafe APIs or syntax errors abort the export.
+
+**All computational block types are supported.** Only purely visual elements (comments, lines, snap points) are ignored. Cross-page connectors carry a one-scan delay when the sink is evaluated before its source, exactly as in the simulator.
 
 ---
 

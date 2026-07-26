@@ -69,6 +69,11 @@
             language="javascript"
             src="scripts/CrossRef.js"
         ></script>
+        <script
+            type="text/javascript"
+            language="javascript"
+            src="scripts/NodeRedExport.js"
+        ></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <style>
             body {
@@ -1090,6 +1095,15 @@
                 disabled
             >
                 &#128438;
+            </button>
+            <button
+                class="shortcut-btn toolbar-icon-btn"
+                id="nodeRedButton"
+                onclick="my_Sheet.exportNodeRed()"
+                title="Export as Node-RED Function node"
+                style="font-size: 13px; font-weight: bold"
+            >
+                NR
             </button>
             <input
                 type="text"
