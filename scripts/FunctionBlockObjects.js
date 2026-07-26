@@ -3566,6 +3566,10 @@ function CommentBlock() {
   this.commentHTML = "Comment";
   this.commentWidth = 150;
   this.commentHeight = 60;
+  this.bgTransparent = false;
+  this.borderTransparent = false;
+  this.padLeft = 6;
+  this.padTop = 4;
   this._needsInitialSettings = true;
 }
 
@@ -3573,9 +3577,9 @@ CommentBlock.prototype = new Base();
 
 CommentBlock.prototype.create = function (sheet, t, l) {
   Base.prototype.create.call(this, sheet, t, l);
-  // Override styling for comment block
-  this.divObj.style.backgroundColor = "white";
-  this.divObj.style.border = "1px solid black";
+  // Override styling for comment block (background + border honour the
+  // transparency flags set via the settings dialog).
+  this._applyCommentStyle();
   this.divObj.style.cursor = "move";
   this.divObj.style.overflow = "hidden";
   this.divObj.style.textAlign = "left";
@@ -3589,7 +3593,6 @@ CommentBlock.prototype.create = function (sheet, t, l) {
 
   // Create content area
   this._contentDiv = document.createElement("div");
-  this._contentDiv.style.padding = "4px 6px";
   this._contentDiv.style.fontSize = "11px";
   this._contentDiv.style.fontFamily = "Calibri, Arial, sans-serif";
   this._contentDiv.style.fontWeight = "normal";
@@ -3597,57 +3600,8 @@ CommentBlock.prototype.create = function (sheet, t, l) {
   this._contentDiv.style.wordWrap = "break-word";
   this._contentDiv.style.pointerEvents = "none";
   this._contentDiv.innerHTML = this.commentHTML;
+  this._applyContentPadding();
   this.divObj.appendChild(this._contentDiv);
-
-  // Create resize handle
-  this._resizeHandle = document.createElement("div");
-  this._resizeHandle.style.position = "absolute";
-  this._resizeHandle.style.right = "0";
-  this._resizeHandle.style.bottom = "0";
-  this._resizeHandle.style.width = "10px";
-  this._resizeHandle.style.height = "10px";
-  this._resizeHandle.style.cursor = "nwse-resize";
-  this._resizeHandle.style.borderRight = "2px solid #999";
-  this._resizeHandle.style.borderBottom = "2px solid #999";
-  this.divObj.appendChild(this._resizeHandle);
-
-  // Resize drag logic
-  var self = this;
-  this._isResizing = false;
-  this._resizeHandle.addEventListener(
-    "mousedown",
-    function (e) {
-      e.stopPropagation();
-      e.preventDefault();
-      self._isResizing = true;
-      self.captured = 0; // Cancel any block drag
-      var startX = e.clientX;
-      var startY = e.clientY;
-      var startW = parseInt(self.divObj.style.width);
-      var startH = parseInt(self.divObj.style.height);
-
-      function onMove(ev) {
-        var dx = (ev.clientX - startX) / self.sheetObject.scale;
-        var dy = (ev.clientY - startY) / self.sheetObject.scale;
-        var newW = Math.max(60, startW + dx);
-        var newH = Math.max(30, startH + dy);
-        self.divObj.style.width = newW;
-        self.divObj.style.height = newH;
-        self.divWidth = newW;
-        self.divHeight = newH;
-        self.commentWidth = newW;
-        self.commentHeight = newH;
-      }
-      function onUp() {
-        self._isResizing = false;
-        document.removeEventListener("mousemove", onMove, true);
-        document.removeEventListener("mouseup", onUp, true);
-      }
-      document.addEventListener("mousemove", onMove, true);
-      document.addEventListener("mouseup", onUp, true);
-    },
-    true,
-  );
 
   if (this._needsInitialSettings) {
     this._needsInitialSettings = false;
@@ -3677,11 +3631,60 @@ CommentBlock.prototype.openSettings = function () {
     "</div>" +
     '<div id="commentEditor" contenteditable="true" style="border:1px solid #aaa;border-radius:3px;padding:6px;min-height:80px;max-height:200px;overflow-y:auto;font-family:Calibri,Arial,sans-serif;font-size:12px;line-height:1.3;outline:none;">' +
     self.commentHTML +
+    "</div>" +
+    '<div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">' +
+    '<label style="font-size:12px;">Width (px): ' +
+    '<input type="number" id="commentW" min="10" value="' +
+    parseInt(self.commentWidth) +
+    '" style="width:70px;"></label>' +
+    '<label style="font-size:12px;">Height (px): ' +
+    '<input type="number" id="commentH" min="10" value="' +
+    parseInt(self.commentHeight) +
+    '" style="width:70px;"></label>' +
+    "</div>" +
+    '<div style="margin-top:6px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">' +
+    '<label style="font-size:12px;">Text padding left (px): ' +
+    '<input type="number" id="commentPadL" min="0" value="' +
+    parseInt(self.padLeft) +
+    '" style="width:70px;"></label>' +
+    '<label style="font-size:12px;">Text padding top (px): ' +
+    '<input type="number" id="commentPadT" min="0" value="' +
+    parseInt(self.padTop) +
+    '" style="width:70px;"></label>' +
+    "</div>" +
+    '<div style="margin-top:6px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">' +
+    '<label style="font-size:12px;"><input type="checkbox" id="commentBgTransp"' +
+    (self.bgTransparent ? " checked" : "") +
+    "> Transparent background</label>" +
+    '<label style="font-size:12px;"><input type="checkbox" id="commentBorderTransp"' +
+    (self.borderTransparent ? " checked" : "") +
+    "> Transparent border</label>" +
     "</div>";
 
   Base.showModal(html, function () {
     self.commentHTML = document.getElementById("commentEditor").innerHTML;
     self._contentDiv.innerHTML = self.commentHTML;
+    var w = parseInt(document.getElementById("commentW").value);
+    var h = parseInt(document.getElementById("commentH").value);
+    if (!isNaN(w) && w >= 10) {
+      self.commentWidth = w;
+      self.divWidth = w;
+      self.divObj.style.width = w;
+    }
+    if (!isNaN(h) && h >= 10) {
+      self.commentHeight = h;
+      self.divHeight = h;
+      self.divObj.style.height = h;
+    }
+    var pl = parseInt(document.getElementById("commentPadL").value);
+    var pt = parseInt(document.getElementById("commentPadT").value);
+    if (!isNaN(pl) && pl >= 0) self.padLeft = pl;
+    if (!isNaN(pt) && pt >= 0) self.padTop = pt;
+    self._applyContentPadding();
+    self.bgTransparent = document.getElementById("commentBgTransp").checked;
+    self.borderTransparent =
+      document.getElementById("commentBorderTransp").checked;
+    self._applyCommentStyle();
   });
 
   // Focus editor
@@ -3699,25 +3702,57 @@ CommentBlock.prototype.Execute = function () {
   // No logic
 };
 
+// Apply background + border according to the transparency flags. The border is
+// always kept 1px wide (transparent when hidden) so the box does not shift and
+// the selection highlight can still show a 1px outline.
+CommentBlock.prototype._applyCommentStyle = function () {
+  this.divObj.style.backgroundColor = this.bgTransparent ? "transparent" : "white";
+  this.divObj.style.border = this.borderTransparent
+    ? "1px solid transparent"
+    : "1px solid black";
+};
+
+// Text inset. Left and top are user-adjustable via the settings dialog; right
+// and bottom keep their original defaults (6px / 4px).
+CommentBlock.prototype._applyContentPadding = function () {
+  if (!this._contentDiv) return;
+  this._contentDiv.style.padding =
+    this.padTop + "px 6px 4px " + this.padLeft + "px";
+};
+
 CommentBlock.prototype.resetStyle = function () {
-  this.divObj.style.border = "1px solid black";
+  this.divObj.style.border = this.borderTransparent
+    ? "1px solid transparent"
+    : "1px solid black";
 };
 
 CommentBlock.prototype._serializeProps = function (p) {
   p.commentHTML = this.commentHTML;
   p.commentWidth = this.commentWidth;
   p.commentHeight = this.commentHeight;
+  p.bgTransparent = this.bgTransparent;
+  p.borderTransparent = this.borderTransparent;
+  p.padLeft = this.padLeft;
+  p.padTop = this.padTop;
 };
 
 CommentBlock.prototype.applySerializedProps = function (p) {
   this.commentHTML = p.commentHTML || "Comment";
   this.commentWidth = p.commentWidth || 150;
   this.commentHeight = p.commentHeight || 60;
+  this.bgTransparent = !!p.bgTransparent;
+  this.borderTransparent = !!p.borderTransparent;
+  this.padLeft = p.padLeft != null ? p.padLeft : 6;
+  this.padTop = p.padTop != null ? p.padTop : 4;
   this.divObj.style.width = this.commentWidth;
   this.divObj.style.height = this.commentHeight;
   this.divWidth = this.commentWidth;
   this.divHeight = this.commentHeight;
-  if (this._contentDiv) this._contentDiv.innerHTML = this.commentHTML;
+  this._applyCommentStyle();
+  if (this._contentDiv) {
+    this._contentDiv.innerHTML = this.commentHTML;
+    this._applyContentPadding();
+  }
 };
 
 //**************************************************************************

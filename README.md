@@ -75,7 +75,7 @@ jsBlocks is a browser-based simulator for designing and simulating Function Bloc
 
 ### Templates
 
-- **Built-in Template Library** — Categorized example projects loaded from the `templates/` directory, including AND gate layout, digital I/O logic, dual input timer, timer delay logic, timer off-delay, XOR edge detection, XOR with trigger, drawing template, and page layout frame.
+- **Built-in Template Library** — Ready-to-use page layouts loaded from the `templates/` directory: an A4 FBD frame with a full title block (Schriftfeld) and a simple A4 FBD frame.
 
 ---
 
@@ -260,15 +260,8 @@ The `templates/` directory contains categorized example projects to help you get
 
 | Template | Description |
 |----------|-------------|
-| `and_gate_layout.json` | AND gate layout example. |
-| `digital_io_logic.json` | Digital I/O logic example. |
-| `dual_input_timer.json` | Dual input timer example. |
-| `timer_delay_logic.json` | Timer delay logic example. |
-| `timer_off_delay.json` | Timer off-delay example. |
-| `xor_edge_detection.json` | XOR edge detection example. |
-| `xor_with_trigger.json` | XOR with trigger example. |
-| `drawing_template.json` | Drawing and annotation example. |
-| `page_layout_frame.json` | Page layout frame example. |
+| `fbd_layout_a4.json` | A4 page frame with a full title block (Schriftfeld). |
+| `fbd_layout_a4_simple.json` | A4 page frame with a simple title block. |
 
 > **Note:** Templates are loaded via `XMLHttpRequest`. To use them, serve the project via a local web server (e.g., `python3 -m http.server`) rather than opening `index.htm` directly from the file system.
 
@@ -291,17 +284,11 @@ jsBlocks/
 │   └── __tests__/                    # Headless tests (node --test)
 ├── templates/
 │   ├── templates.json                # Template index file
-│   ├── and_gate_layout.json          # AND gate example
-│   ├── digital_io_logic.json         # Digital I/O example
-│   ├── timer_delay_logic.json        # Timer delay example
-│   ├── timer_off_delay.json          # Timer off-delay example
-│   ├── dual_input_timer.json         # Dual input timer example
-│   ├── xor_edge_detection.json       # XOR edge detection example
-│   ├── xor_with_trigger.json         # XOR with trigger example
-│   ├── drawing_template.json         # Drawing template
-│   └── page_layout_frame.json        # Page layout frame
+│   ├── fbd_layout_a4.json            # A4 page frame with full title block
+│   └── fbd_layout_a4_simple.json     # A4 page frame with simple title block
 ├── Examples/
-│   └── jsblocks_project*.json        # Example project files (9 samples)
+│   ├── jsblocks_FBD_Layout_A4.json        # A4 FBD layout (full title block)
+│   └── jsblocks_FBD_Layout_A4_Simple.json # A4 FBD layout (simple title block)
 ├── LICENSE                           # MIT License
 ├── jsBlocksModules.md                # Module refactoring guide (future plans)
 └── README.md                         # This file

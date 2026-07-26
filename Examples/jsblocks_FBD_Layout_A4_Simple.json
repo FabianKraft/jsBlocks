@@ -1,15 +1,16 @@
 {
   "version": 1,
+  "name": "FBD Layout A4 Simple",
   "blocks": [
     {
       "type": "DrawLine",
-      "left": 40,
-      "top": 60,
+      "left": 36,
+      "top": 36,
       "props": {
-        "x1": 40,
-        "y1": 60,
-        "x2": 1083,
-        "y2": 60,
+        "x1": 36,
+        "y1": 36,
+        "x2": 36,
+        "y2": 828,
         "lineColor": "#000000",
         "lineThickness": 2,
         "lineStyle": "",
@@ -21,13 +22,13 @@
     },
     {
       "type": "DrawLine",
-      "left": 40,
-      "top": 60,
+      "left": 36,
+      "top": 768,
       "props": {
-        "x1": 40,
-        "y1": 60,
-        "x2": 40,
-        "y2": 774,
+        "x1": 36,
+        "y1": 768,
+        "x2": 1152,
+        "y2": 768,
         "lineColor": "#000000",
         "lineThickness": 2,
         "lineStyle": "",
@@ -39,13 +40,13 @@
     },
     {
       "type": "DrawLine",
-      "left": 1083,
-      "top": 60,
+      "left": 1152,
+      "top": 36,
       "props": {
-        "x1": 1083,
-        "y1": 60,
-        "x2": 1083,
-        "y2": 774,
+        "x1": 1152,
+        "y1": 36,
+        "x2": 1152,
+        "y2": 828,
         "lineColor": "#000000",
         "lineThickness": 2,
         "lineStyle": "",
@@ -57,13 +58,13 @@
     },
     {
       "type": "DrawLine",
-      "left": 40,
-      "top": 774,
+      "left": 36,
+      "top": 828,
       "props": {
-        "x1": 40,
-        "y1": 774,
-        "x2": 1083,
-        "y2": 774,
+        "x1": 36,
+        "y1": 828,
+        "x2": 1151.9999999999998,
+        "y2": 828,
         "lineColor": "#000000",
         "lineThickness": 2,
         "lineStyle": "",
@@ -75,13 +76,13 @@
     },
     {
       "type": "DrawLine",
-      "left": 55,
-      "top": 75,
+      "left": 36,
+      "top": 36,
       "props": {
-        "x1": 55,
-        "y1": 75,
-        "x2": 55,
-        "y2": 759,
+        "x1": 36,
+        "y1": 36,
+        "x2": 1152,
+        "y2": 36,
         "lineColor": "#000000",
         "lineThickness": 2,
         "lineStyle": "",
@@ -92,18 +93,17 @@
       "_saveIndex": 4
     },
     {
-      "type": "DrawLine",
+      "type": "Comment",
       "left": 1068,
-      "top": 75,
+      "top": 804,
       "props": {
-        "x1": 1068,
-        "y1": 75,
-        "x2": 1068,
-        "y2": 759,
-        "lineColor": "#000000",
-        "lineThickness": 2,
-        "lineStyle": "",
-        "lineStyleName": "solid"
+        "commentHTML": "Page: 000",
+        "commentWidth": 83,
+        "commentHeight": 23,
+        "bgTransparent": true,
+        "borderTransparent": true,
+        "padLeft": 3,
+        "padTop": 0
       },
       "inInversions": [],
       "outInversions": [],
@@ -111,15 +111,15 @@
     },
     {
       "type": "DrawLine",
-      "left": 55,
-      "top": 75,
+      "left": 1068,
+      "top": 804,
       "props": {
-        "x1": 55,
-        "y1": 75,
+        "x1": 1068,
+        "y1": 804,
         "x2": 1068,
-        "y2": 75,
+        "y2": 828,
         "lineColor": "#000000",
-        "lineThickness": 2,
+        "lineThickness": 1,
         "lineStyle": "",
         "lineStyleName": "solid"
       },
@@ -129,15 +129,15 @@
     },
     {
       "type": "DrawLine",
-      "left": 55,
-      "top": 759,
+      "left": 936,
+      "top": 804,
       "props": {
-        "x1": 55,
-        "y1": 759,
-        "x2": 1068,
-        "y2": 759,
+        "x1": 936,
+        "y1": 804,
+        "x2": 1152,
+        "y2": 804,
         "lineColor": "#000000",
-        "lineThickness": 2,
+        "lineThickness": 1,
         "lineStyle": "",
         "lineStyleName": "solid"
       },
@@ -147,12 +147,16 @@
     },
     {
       "type": "Comment",
-      "left": 56,
-      "top": 727,
+      "left": 936,
+      "top": 804,
       "props": {
-        "commentHTML": "Comment",
-        "commentWidth": 262.21366299963165,
-        "commentHeight": 30
+        "commentHTML": "FBD-XXXXXXXXXX",
+        "commentWidth": 131,
+        "commentHeight": 23,
+        "bgTransparent": true,
+        "borderTransparent": true,
+        "padLeft": 3,
+        "padTop": 0
       },
       "inInversions": [],
       "outInversions": [],
@@ -160,15 +164,15 @@
     },
     {
       "type": "DrawLine",
-      "left": 55,
-      "top": 726,
+      "left": 936,
+      "top": 768,
       "props": {
-        "x1": 55,
-        "y1": 726,
-        "x2": 1068,
-        "y2": 726,
+        "x1": 936,
+        "y1": 768,
+        "x2": 936,
+        "y2": 828,
         "lineColor": "#000000",
-        "lineThickness": 2,
+        "lineThickness": 1,
         "lineStyle": "",
         "lineStyleName": "solid"
       },
@@ -177,23 +181,35 @@
       "_saveIndex": 9
     },
     {
-      "type": "DrawLine",
-      "left": 320,
-      "top": 726,
+      "type": "Comment",
+      "left": 936,
+      "top": 768,
       "props": {
-        "x1": 320,
-        "y1": 726,
-        "x2": 320,
-        "y2": 759,
-        "lineColor": "#000000",
-        "lineThickness": 2,
-        "lineStyle": "",
-        "lineStyleName": "solid"
+        "commentHTML": "<font size=\"3\" style=\"\">Example Project</font>",
+        "commentWidth": 215,
+        "commentHeight": 35,
+        "bgTransparent": true,
+        "borderTransparent": true,
+        "padLeft": 3,
+        "padTop": 0
       },
       "inInversions": [],
       "outInversions": [],
       "_saveIndex": 10
     }
   ],
-  "connections": []
+  "connections": [],
+  "customDefinitions": {},
+  "settings": {
+    "gridVisible": true,
+    "gridSize": 12,
+    "snapToGrid": true,
+    "snapEnabled": true,
+    "snapVisible": true,
+    "snapLinesToGrid": false,
+    "execOrderVisible": false,
+    "delaySymbolVisible": false,
+    "currentPageFormat": "a4l",
+    "simulationCycleMs": 15
+  }
 }
