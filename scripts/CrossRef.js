@@ -38,6 +38,8 @@ CrossRef.TYPES = {
   Do: "tagName",
   Ai: "tagName",
   Aq: "tagName",
+  Gi: "tagName",
+  Go: "tagName",
   TagLabelIn: "labelName",
   TagLabelOut: "labelName",
   LabelInPanel: "labelName",
@@ -51,7 +53,9 @@ CrossRef.TYPE_LABEL = {
   Di: "DI",
   Do: "DO",
   Ai: "AI",
-  Aq: "AQ",
+  Aq: "AO",
+  Gi: "GI",
+  Go: "GO",
   TagLabelIn: "Label In",
   TagLabelOut: "Label Out",
   LabelInPanel: "Panel In",
@@ -62,7 +66,18 @@ CrossRef.TYPE_LABEL = {
 
 // Default/unedited identifiers (compared lower-case) that are hidden from the
 // list, so untouched blocks do not clutter it until they are actually named.
-CrossRef.PLACEHOLDERS = { "": 1, tagname: 1, ai: 1, aq: 1, "???": 1 };
+CrossRef.PLACEHOLDERS = {
+  "": 1,
+  tag: 1,
+  tagname: 1,
+  name: 1,
+  ai: 1,
+  aq: 1,
+  ao: 1,
+  gi: 1,
+  go: 1,
+  "???": 1,
+};
 
 // Resolve and cache the panel's DOM nodes; null until the panel exists.
 CrossRef.prototype._els = function () {

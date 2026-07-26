@@ -387,6 +387,33 @@
         return ctx.emitSend(ctx.in(0));
       },
     },
+    Gi: {
+      // Generic input: reads reg[tag]. Bool coerces to 1/0 (like Di); Int/Real
+      // pass the numeric value through (like Ai). Data type is taken from the
+      // block's own output pin.
+      emit: function (n, ctx) {
+        var dt = n.outputs[0] ? n.outputs[0].dataType : "bool";
+        if (dt === "bool") {
+          return ctx.out(0) + " = " + ctx.tag + " in reg ? (reg[" + ctx.tag + "] ? 1 : 0) : 0;";
+        }
+        return (
+          "var v = Number(reg[" + ctx.tag + "]); " +
+          ctx.out(0) + " = isNaN(v) ? 0 : v;"
+        );
+      },
+    },
+    Go: {
+      // Generic output: change-detected send of its input. Bool is coerced to a
+      // boolean (like Do); Int/Real send the raw value (like Aq). Data type is
+      // taken from the block's own input pin.
+      emit: function (n, ctx) {
+        var dt = n.inputs[0] ? n.inputs[0].dataType : "bool";
+        if (dt === "bool") {
+          return ctx.emitSend("!!(" + ctx.in(0) + ")");
+        }
+        return ctx.emitSend(ctx.in(0));
+      },
+    },
 
     // ---- Bit logic --------------------------------------------------------
     And: {

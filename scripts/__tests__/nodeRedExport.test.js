@@ -239,6 +239,36 @@ test("analog AI -> AQ passthrough with change detection", () => {
   assert.strictEqual(lastPayload(r.sent, "OUT"), 7);
 });
 
+test("bool GI -> GO passthrough with change detection (like DI/DO)", () => {
+  const gi = block("Gi", { tagName: "GS1", outs: [conn("bool")] });
+  const go = block("Go", { tagName: "GOUT", ins: [conn("bool")] });
+  wire(gi.outConnections[0], go.inConnections[0]);
+  const r = runFlow(NodeRedExport.generateFlow(NodeRedExport.buildGraph(sheet([gi, go]))));
+
+  r.scan(); // initial: reg unset -> 0 -> GO sends false
+  assert.strictEqual(lastPayload(r.sent, "GOUT"), false);
+  r.send("GS1", true);
+  r.scan();
+  assert.strictEqual(lastPayload(r.sent, "GOUT"), true);
+  r.scan(); // no change -> no send
+  assert.strictEqual(countSends(r.sent, "GOUT"), 2, "false then true, no repeat");
+});
+
+test("analog GI -> GO passthrough (int, like AI/AQ)", () => {
+  const gi = block("Gi", { tagName: "GIN", outs: [conn("int")] });
+  const go = block("Go", { tagName: "GOUT", ins: [conn("int")] });
+  wire(gi.outConnections[0], go.inConnections[0]);
+  const r = runFlow(NodeRedExport.generateFlow(NodeRedExport.buildGraph(sheet([gi, go]))));
+
+  r.scan();
+  assert.strictEqual(lastPayload(r.sent, "GOUT"), 0);
+  r.send("GIN", 42);
+  r.scan();
+  assert.strictEqual(lastPayload(r.sent, "GOUT"), 42);
+  r.scan();
+  assert.strictEqual(countSends(r.sent, "GOUT"), 2, "0 then 42, no repeat");
+});
+
 test("feedback loop reads previous-scan value (toggle via SR)", () => {
   // Q feeds back into its own reset through a rising-edge — classic 1-scan delay.
   // Here we simply verify a feedback edge does not throw and uses seeded 0.

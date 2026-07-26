@@ -236,10 +236,10 @@ OrBlock.prototype.Execute = function () {
 function DiBlock() {
   this.objectName = "Di";
   this.text = "DI";
-  this.divHeight = 26;
-  this.divWidth = 178;
-  this.tagName = "tagname";
-  this.comment = "";
+  this.divHeight = 23;
+  this.divWidth = 179;
+  this.tagName = "Tag";
+  this.comment = "Comment";
   this.keySet = "";
   this.keyReset = "";
   this.keyNormal = "";
@@ -267,7 +267,7 @@ DiBlock.prototype.create = function (sheet, t, l) {
   this.divObj.appendChild(this._typeBox);
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
-    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;";
+    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:left;";
   this._updateInfoBox();
   this.divObj.appendChild(this._infoBox);
   if (this._needsInitialSettings) {
@@ -312,7 +312,7 @@ DiBlock.prototype.openSettings = function () {
     self.keyNormal +
     '" placeholder="-"></div>';
   Base.showModal(html, function () {
-    self.tagName = document.getElementById("modalTagName").value || "tagname";
+    self.tagName = document.getElementById("modalTagName").value || "Tag";
     self.comment = document.getElementById("modalComment").value || "";
     self.keySet = document.getElementById("modalKeySet").value.toLowerCase();
     self.keyReset = document
@@ -375,10 +375,10 @@ DiBlock.prototype.Execute = function () {
 function DoBlock() {
   this.objectName = "Do";
   this.text = "DO";
-  this.divHeight = 26;
-  this.divWidth = 178;
-  this.tagName = "tagname";
-  this.comment = "";
+  this.divHeight = 23;
+  this.divWidth = 179;
+  this.tagName = "Tag";
+  this.comment = "Comment";
   this._needsInitialSettings = true;
 }
 
@@ -396,7 +396,7 @@ DoBlock.prototype.create = function (sheet, t, l) {
   // Layout: large left (133px) + small right (45px)
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
-    "position:absolute;left:0;top:0;width:132px;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:left;";
+    "position:absolute;left:0;top:0;width:133px;height:100%;box-sizing:border-box;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:right;";
   this._updateInfoBox();
   this.divObj.appendChild(this._infoBox);
   this._typeBox = document.createElement("div");
@@ -433,7 +433,7 @@ DoBlock.prototype.openSettings = function () {
     self.comment +
     '"></div>';
   Base.showModal(html, function () {
-    self.tagName = document.getElementById("modalTagName").value || "tagname";
+    self.tagName = document.getElementById("modalTagName").value || "Tag";
     self.comment = document.getElementById("modalComment").value || "";
     self._updateInfoBox();
   });
@@ -2192,11 +2192,11 @@ VariableBlock.prototype.Execute = function () {
 function AiBlock() {
   this._handlesOwnConnectors = true;
   this.objectName = "Ai";
-  this.divHeight = 26;
-  this.divWidth = 178;
+  this.divHeight = 23;
+  this.divWidth = 179;
   this.text = "AI";
-  this.tagName = "AI";
-  this.comment = "";
+  this.tagName = "Tag";
+  this.comment = "Comment";
   this.rawValue = 0;
   this.aiDataType = "int";
   this._needsInitialSettings = true;
@@ -2221,7 +2221,7 @@ AiBlock.prototype.create = function (sheet, t, l) {
   this.divObj.appendChild(this._typeBox);
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
-    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;";
+    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:left;";
   this._updateInfoBox();
   this.divObj.appendChild(this._infoBox);
   if (this._needsInitialSettings) {
@@ -2270,7 +2270,7 @@ AiBlock.prototype.openSettings = function () {
     ">Real</option>" +
     "</select></div>";
   Base.showModal(html, function () {
-    self.tagName = document.getElementById("modalTagName").value || "AI";
+    self.tagName = document.getElementById("modalTagName").value || "Tag";
     self.comment = document.getElementById("modalComment").value || "";
     var valStr = document.getElementById("modalValue").value;
     var newType = document.getElementById("modalAiType").value;
@@ -2367,11 +2367,11 @@ AiBlock.prototype.Execute = function () {
 function AqBlock() {
   this._handlesOwnConnectors = true;
   this.objectName = "Aq";
-  this.divHeight = 26;
-  this.divWidth = 178;
-  this.text = "AQ";
-  this.tagName = "AQ";
-  this.comment = "";
+  this.divHeight = 23;
+  this.divWidth = 179;
+  this.text = "AO";
+  this.tagName = "Tag";
+  this.comment = "Comment";
   this.aqDataType = "int";
   this._needsInitialSettings = true;
 }
@@ -2390,13 +2390,13 @@ AqBlock.prototype.create = function (sheet, t, l) {
   // Large left (133px) + small right (45px)
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
-    "position:absolute;left:0;top:0;width:132px;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:left;";
+    "position:absolute;left:0;top:0;width:133px;height:100%;box-sizing:border-box;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:right;";
   this._updateInfoBox();
   this.divObj.appendChild(this._infoBox);
   this._typeBox = document.createElement("div");
   this._typeBox.style.cssText =
     "position:absolute;right:0;top:0;width:45px;height:100%;background:rgb(201,203,217);border-left:1px solid black;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;font-family:Calibri,Arial,sans-serif;";
-  this._typeBox.innerHTML = "AQ";
+  this._typeBox.innerHTML = "AO";
   this.divObj.appendChild(this._typeBox);
   if (this._needsInitialSettings) {
     this._needsInitialSettings = false;
@@ -2417,7 +2417,7 @@ AqBlock.prototype._updateInfoBox = function () {
 AqBlock.prototype.openSettings = function () {
   var self = this;
   var html =
-    "<h3>AQ Settings</h3>" +
+    "<h3>AO Settings</h3>" +
     '<div class="modal-row"><label>Tagname:</label>' +
     '<input type="text" id="modalTagName" value="' +
     self.tagName +
@@ -2436,7 +2436,7 @@ AqBlock.prototype.openSettings = function () {
     ">Real</option>" +
     "</select></div>";
   Base.showModal(html, function () {
-    self.tagName = document.getElementById("modalTagName").value || "AQ";
+    self.tagName = document.getElementById("modalTagName").value || "Tag";
     self.comment = document.getElementById("modalComment").value || "";
     var newType = document.getElementById("modalAqType").value;
     if (newType !== self.aqDataType || self.inConnections.length === 0) {
@@ -2487,6 +2487,367 @@ AqBlock.prototype.Execute = function () {
     '<div style="color:#666;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
     (this.comment || "&nbsp;") +
     "</div>";
+};
+
+//**************************************************************************
+//
+//			Define a GI Block (Generic Input)
+//
+//  Like DI/AI, but the data type can be Bool, Int or Real and the left type
+//  box carries a freely editable label (defaults to "GI"). Used to mark signals
+//  that come from a PLS / other system for readability.
+//**************************************************************************
+function GiBlock() {
+  this._handlesOwnConnectors = true;
+  this.objectName = "Gi";
+  this.divHeight = 23;
+  this.divWidth = 179;
+  this.text = "GI";
+  this.tagName = "Tag";
+  this.comment = "Comment";
+  this.typeLabel = "GI";
+  this.rawValue = 0;
+  this.giDataType = "bool";
+  this._needsInitialSettings = true;
+}
+
+GiBlock.prototype = new Base();
+
+GiBlock.prototype.create = function (sheet, t, l) {
+  Base.prototype.create.call(this, sheet, t, l);
+  this.divObj.style.backgroundColor = "white";
+  this.divObj.style.overflow = "hidden";
+  this.divObj.style.padding = "0";
+  if (this.headerDiv) {
+    this.divObj.removeChild(this.headerDiv);
+    this.headerDiv = null;
+  }
+  // Small rect left (45px) + large right (133px) — like DI/AI
+  this._typeBox = document.createElement("div");
+  this._typeBox.style.cssText =
+    "position:absolute;left:0;top:0;width:45px;height:100%;background:rgb(201,203,217);border-right:1px solid black;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:bold;font-size:14px;font-family:Calibri,Arial,sans-serif;overflow:hidden;";
+  this._typeBox.textContent = this.typeLabel;
+  this.divObj.appendChild(this._typeBox);
+  this._infoBox = document.createElement("div");
+  this._infoBox.style.cssText =
+    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:left;";
+  this._updateInfoBox();
+  this.divObj.appendChild(this._infoBox);
+  if (this._needsInitialSettings) {
+    this._needsInitialSettings = false;
+    this.openSettings();
+  }
+};
+
+GiBlock.prototype._updateInfoBox = function () {
+  this._infoBox.innerHTML =
+    '<div style="font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
+    this.tagName +
+    "</div>" +
+    '<div style="color:#666;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
+    (this.comment || "&nbsp;") +
+    "</div>";
+};
+
+GiBlock.prototype.openSettings = function () {
+  var self = this;
+  var html =
+    "<h3>GI Settings</h3>" +
+    '<div class="modal-row"><label>Label:</label>' +
+    '<input type="text" id="modalTypeLabel" value="' +
+    self.typeLabel +
+    '"></div>' +
+    '<div class="modal-row"><label>Tagname:</label>' +
+    '<input type="text" id="modalTagName" value="' +
+    self.tagName +
+    '"></div>' +
+    '<div class="modal-row"><label>Comment:</label>' +
+    '<input type="text" id="modalComment" value="' +
+    self.comment +
+    '"></div>' +
+    '<div class="modal-row"><label>Value:</label>' +
+    '<input type="text" id="modalValue" value="' +
+    self.rawValue +
+    '"></div>' +
+    '<div class="modal-row"><label>Data type:</label>' +
+    '<select id="modalGiType">' +
+    '<option value="bool"' +
+    (self.giDataType === "bool" ? " selected" : "") +
+    ">Bool</option>" +
+    '<option value="int"' +
+    (self.giDataType === "int" ? " selected" : "") +
+    ">Int</option>" +
+    '<option value="real"' +
+    (self.giDataType === "real" ? " selected" : "") +
+    ">Real</option>" +
+    "</select></div>";
+  Base.showModal(html, function () {
+    self.typeLabel = document.getElementById("modalTypeLabel").value || "GI";
+    self.tagName = document.getElementById("modalTagName").value || "Tag";
+    self.comment = document.getElementById("modalComment").value || "";
+    var valStr = document.getElementById("modalValue").value;
+    var newType = document.getElementById("modalGiType").value;
+    if (newType === "real") {
+      var val = parseFloat(valStr);
+      if (!isNaN(val)) self.rawValue = val;
+    } else if (newType === "int") {
+      var val = parseInt(valStr);
+      if (!isNaN(val)) self.rawValue = val;
+    } else {
+      var val = parseFloat(valStr);
+      self.rawValue = val ? 1 : 0;
+    }
+    if (newType !== self.giDataType || self.outConnections.length === 0) {
+      for (var i = 0; i < self.outConnections.length; i++)
+        if (self.outConnections[i])
+          self.outConnections[i].removeConnectedFrom();
+      self.outConnections = [];
+      self.giDataType = newType;
+      self.addConnections();
+    }
+    self.giDataType = newType;
+    if (self._typeBox) self._typeBox.textContent = self.typeLabel;
+    self._updateInfoBox();
+  });
+};
+
+GiBlock.prototype.addConnections = function () {
+  var tip =
+    this.giDataType === "real"
+      ? "Real"
+      : this.giDataType === "int"
+        ? "Int"
+        : "Bool";
+  this.outConnections[0] = new Connector(
+    this,
+    0,
+    50,
+    this.giDataType,
+    tip + " - Generic Input",
+  );
+};
+
+GiBlock.prototype.clickHandler = function (e) {
+  if (!this.hasMoved) {
+    if (this.sheetObject.simulateOn) {
+      if (this.giDataType === "bool") {
+        this.rawValue = this.rawValue ? 0 : 1;
+      } else {
+        var canvasPos = this.sheetObject.screenToCanvas(e.clientX, e.clientY);
+        var blockLeft = parseInt(this.divObj.style.left) + 46; // info box area
+        var infoW = 132;
+        var third = infoW / 3;
+        if (canvasPos.x < blockLeft + third)
+          this.rawValue =
+            this.giDataType === "real"
+              ? parseFloat((this.rawValue - 0.1).toFixed(3))
+              : this.rawValue - 1;
+        else if (canvasPos.x > blockLeft + third * 2)
+          this.rawValue =
+            this.giDataType === "real"
+              ? parseFloat((this.rawValue + 0.1).toFixed(3))
+              : this.rawValue + 1;
+        else {
+          var self = this;
+          var html =
+            '<h3>GI Value</h3><div class="modal-row"><label>Value:</label><input type="text" id="modalValue" value="' +
+            self.rawValue +
+            '"></div>';
+          Base.showModal(html, function () {
+            var val =
+              self.giDataType === "real"
+                ? parseFloat(document.getElementById("modalValue").value)
+                : parseInt(document.getElementById("modalValue").value);
+            if (!isNaN(val)) self.rawValue = val;
+          });
+        }
+      }
+    }
+  } else {
+    this.hasMoved = 0;
+  }
+};
+
+GiBlock.prototype.Execute = function () {
+  var out = this.rawValue;
+  var displayVal;
+  if (this.giDataType === "real") {
+    displayVal = parseFloat(Number(this.rawValue).toFixed(3));
+  } else if (this.giDataType === "int") {
+    displayVal = parseInt(this.rawValue);
+  } else {
+    out = this.rawValue ? 1 : 0;
+    displayVal = out;
+  }
+  this._infoBox.innerHTML =
+    '<div style="font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
+    this.tagName +
+    ": " +
+    displayVal +
+    "</div>" +
+    '<div style="color:#666;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
+    (this.comment || "&nbsp;") +
+    "</div>";
+  this.outConnections[0].value = out;
+  if (this.giDataType === "bool") {
+    if (out) this.divObj.style.border = "2px solid rgb(3,255,3)";
+    else this.divObj.style.border = "2px dashed rgb(0,0,255)";
+  }
+};
+
+//**************************************************************************
+//
+//			Define a GO Block (Generic Output)
+//
+//  The counterpart to GI (like DO/AQ). Data type can be Bool, Int or Real and
+//  the right type box carries a freely editable label (defaults to "GO").
+//**************************************************************************
+function GoBlock() {
+  this._handlesOwnConnectors = true;
+  this.objectName = "Go";
+  this.divHeight = 23;
+  this.divWidth = 179;
+  this.text = "GO";
+  this.tagName = "Tag";
+  this.comment = "Comment";
+  this.typeLabel = "GO";
+  this.goDataType = "bool";
+  this._needsInitialSettings = true;
+}
+
+GoBlock.prototype = new Base();
+
+GoBlock.prototype.create = function (sheet, t, l) {
+  Base.prototype.create.call(this, sheet, t, l);
+  this.divObj.style.backgroundColor = "white";
+  this.divObj.style.overflow = "hidden";
+  this.divObj.style.padding = "0";
+  if (this.headerDiv) {
+    this.divObj.removeChild(this.headerDiv);
+    this.headerDiv = null;
+  }
+  // Large left (133px, right-aligned) + small right (45px) — like DO/AQ
+  this._infoBox = document.createElement("div");
+  this._infoBox.style.cssText =
+    "position:absolute;left:0;top:0;width:133px;height:100%;box-sizing:border-box;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:right;";
+  this._updateInfoBox();
+  this.divObj.appendChild(this._infoBox);
+  this._typeBox = document.createElement("div");
+  this._typeBox.style.cssText =
+    "position:absolute;right:0;top:0;width:45px;height:100%;background:rgb(201,203,217);border-left:1px solid black;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:bold;font-size:14px;font-family:Calibri,Arial,sans-serif;overflow:hidden;";
+  this._typeBox.textContent = this.typeLabel;
+  this.divObj.appendChild(this._typeBox);
+  if (this._needsInitialSettings) {
+    this._needsInitialSettings = false;
+    this.openSettings();
+  }
+};
+
+GoBlock.prototype._updateInfoBox = function () {
+  this._infoBox.innerHTML =
+    '<div style="font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
+    this.tagName +
+    "</div>" +
+    '<div style="color:#666;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
+    (this.comment || "&nbsp;") +
+    "</div>";
+};
+
+GoBlock.prototype.openSettings = function () {
+  var self = this;
+  var html =
+    "<h3>GO Settings</h3>" +
+    '<div class="modal-row"><label>Label:</label>' +
+    '<input type="text" id="modalTypeLabel" value="' +
+    self.typeLabel +
+    '"></div>' +
+    '<div class="modal-row"><label>Tagname:</label>' +
+    '<input type="text" id="modalTagName" value="' +
+    self.tagName +
+    '"></div>' +
+    '<div class="modal-row"><label>Comment:</label>' +
+    '<input type="text" id="modalComment" value="' +
+    self.comment +
+    '"></div>' +
+    '<div class="modal-row"><label>Data type:</label>' +
+    '<select id="modalGoType">' +
+    '<option value="bool"' +
+    (self.goDataType === "bool" ? " selected" : "") +
+    ">Bool</option>" +
+    '<option value="int"' +
+    (self.goDataType === "int" ? " selected" : "") +
+    ">Int</option>" +
+    '<option value="real"' +
+    (self.goDataType === "real" ? " selected" : "") +
+    ">Real</option>" +
+    "</select></div>";
+  Base.showModal(html, function () {
+    self.typeLabel = document.getElementById("modalTypeLabel").value || "GO";
+    self.tagName = document.getElementById("modalTagName").value || "Tag";
+    self.comment = document.getElementById("modalComment").value || "";
+    var newType = document.getElementById("modalGoType").value;
+    if (newType !== self.goDataType || self.inConnections.length === 0) {
+      for (var i = 0; i < self.inConnections.length; i++)
+        if (self.inConnections[i]) self.inConnections[i].removeConnectedTo();
+      self.inConnections = [];
+      self.goDataType = newType;
+      self.addConnections();
+    }
+    self.goDataType = newType;
+    if (self._typeBox) self._typeBox.textContent = self.typeLabel;
+    self._updateInfoBox();
+  });
+};
+
+GoBlock.prototype.addConnections = function () {
+  var tip =
+    this.goDataType === "real"
+      ? "Real"
+      : this.goDataType === "int"
+        ? "Int"
+        : "Bool";
+  this.inConnections[0] = new Connector(
+    this,
+    1,
+    50,
+    this.goDataType,
+    tip + " - Generic Output",
+  );
+};
+
+GoBlock.prototype.Execute = function () {
+  var displayVal;
+  if (this.goDataType === "real") {
+    var val = this.inConnections[0].connectedFrom
+      ? parseFloat(this.inConnections[0].connectedFrom.value)
+      : 0;
+    if (val === Math.floor(val)) displayVal = val.toFixed(1);
+    else {
+      var str = val.toFixed(3).replace(/0+$/, "");
+      if (str.endsWith(".")) str += "0";
+      displayVal = str;
+    }
+  } else if (this.goDataType === "int") {
+    displayVal = this.inConnections[0].connectedFrom
+      ? parseInt(this.inConnections[0].connectedFrom.value)
+      : 0;
+  } else {
+    displayVal = this.inConnections[0].getInputValue() ? 1 : 0;
+  }
+  this._infoBox.innerHTML =
+    '<div style="font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
+    this.tagName +
+    ": " +
+    displayVal +
+    "</div>" +
+    '<div style="color:#666;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
+    (this.comment || "&nbsp;") +
+    "</div>";
+  if (this.goDataType === "bool") {
+    if (this.inConnections[0].getInputValue())
+      this.divObj.style.border = "2px solid rgb(3,255,3)";
+    else this.divObj.style.border = "2px dashed rgb(0,0,255)";
+  }
 };
 
 //**************************************************************************
@@ -3962,11 +4323,11 @@ function LabelOutPanelBlock() {
   this._handlesOwnConnectors = true;
   this.objectName = "LabelOutPanel";
   this.text = "";
-  this.divHeight = 26;
-  this.divWidth = 178;
-  this.labelName = "???";
+  this.divHeight = 23;
+  this.divWidth = 179;
+  this.labelName = "Name";
   this.labelType = "bool";
-  this.comment = "";
+  this.comment = "Comment";
   this.receivedValue = 0;
   this._needsInitialSettings = true;
 }
@@ -3990,7 +4351,7 @@ LabelOutPanelBlock.prototype.create = function (sheet, t, l) {
   this.divObj.appendChild(this._typeBox);
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
-    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;";
+    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:left;";
   this._updateInfoBox();
   this.divObj.appendChild(this._infoBox);
   if (this._needsInitialSettings) {
@@ -4097,11 +4458,11 @@ function LabelInPanelBlock() {
   this._handlesOwnConnectors = true;
   this.objectName = "LabelInPanel";
   this.text = "";
-  this.divHeight = 26;
-  this.divWidth = 178;
-  this.labelName = "???";
+  this.divHeight = 23;
+  this.divWidth = 179;
+  this.labelName = "Name";
   this.labelType = "bool";
-  this.comment = "";
+  this.comment = "Comment";
   this._needsInitialSettings = true;
 }
 
@@ -4119,7 +4480,7 @@ LabelInPanelBlock.prototype.create = function (sheet, t, l) {
   // Large left (133px) + small right (45px) — like DO/AQ
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
-    "position:absolute;left:0;top:0;width:132px;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:left;";
+    "position:absolute;left:0;top:0;width:133px;height:100%;box-sizing:border-box;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:right;";
   this._updateInfoBox();
   this.divObj.appendChild(this._infoBox);
   this._typeBox = document.createElement("div");
@@ -4396,7 +4757,7 @@ TagLabelOutBlock.prototype.create = function (sheet, t, l) {
   this.divObj.appendChild(this._typeBox);
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
-    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;";
+    "position:absolute;left:46px;top:0;right:0;height:100%;padding:1px 4px;font-size:9px;font-family:Calibri,Arial,sans-serif;line-height:1.2;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:left;";
   this._updateInfoBox();
   this.divObj.appendChild(this._infoBox);
   if (this._needsInitialSettings) {
@@ -5049,7 +5410,7 @@ DiBlock.prototype._serializeProps = function (p) {
   p.keyNormal = this.keyNormal;
 };
 DiBlock.prototype.applySerializedProps = function (p) {
-  this.tagName = p.tagName || "tagname";
+  this.tagName = p.tagName || "Tag";
   this.comment = p.comment || "";
   this.keySet = p.keySet || "";
   this.keyReset = p.keyReset || "";
@@ -5063,7 +5424,7 @@ DoBlock.prototype._serializeProps = function (p) {
   p.comment = this.comment;
 };
 DoBlock.prototype.applySerializedProps = function (p) {
-  this.tagName = p.tagName || "tagname";
+  this.tagName = p.tagName || "Tag";
   this.comment = p.comment || "";
   if (this._infoBox) this._updateInfoBox();
 };
@@ -5085,7 +5446,7 @@ AiBlock.prototype._serializeProps = function (p) {
   p.aiDataType = this.aiDataType;
 };
 AiBlock.prototype.applySerializedProps = function (p) {
-  this.tagName = p.tagName || "AI";
+  this.tagName = p.tagName || "Tag";
   this.comment = p.comment || "";
   this.rawValue = p.rawValue || 0;
   this.aiDataType = p.aiDataType || "int";
@@ -5102,9 +5463,49 @@ AqBlock.prototype._serializeProps = function (p) {
   p.aqDataType = this.aqDataType;
 };
 AqBlock.prototype.applySerializedProps = function (p) {
-  this.tagName = p.tagName || "AQ";
+  this.tagName = p.tagName || "Tag";
   this.comment = p.comment || "";
   this.aqDataType = p.aqDataType || "int";
+  if (this._infoBox) this._updateInfoBox();
+  this.inConnections = [];
+  this.outConnections = [];
+  this.addConnections();
+};
+
+// --- GI ---
+GiBlock.prototype._serializeProps = function (p) {
+  p.tagName = this.tagName;
+  p.comment = this.comment;
+  p.typeLabel = this.typeLabel;
+  p.rawValue = this.rawValue;
+  p.giDataType = this.giDataType;
+};
+GiBlock.prototype.applySerializedProps = function (p) {
+  this.tagName = p.tagName || "Tag";
+  this.comment = p.comment || "";
+  this.typeLabel = p.typeLabel || "GI";
+  this.rawValue = p.rawValue || 0;
+  this.giDataType = p.giDataType || "bool";
+  if (this._typeBox) this._typeBox.textContent = this.typeLabel;
+  if (this._infoBox) this._updateInfoBox();
+  this.inConnections = [];
+  this.outConnections = [];
+  this.addConnections();
+};
+
+// --- GO ---
+GoBlock.prototype._serializeProps = function (p) {
+  p.tagName = this.tagName;
+  p.comment = this.comment;
+  p.typeLabel = this.typeLabel;
+  p.goDataType = this.goDataType;
+};
+GoBlock.prototype.applySerializedProps = function (p) {
+  this.tagName = p.tagName || "Tag";
+  this.comment = p.comment || "";
+  this.typeLabel = p.typeLabel || "GO";
+  this.goDataType = p.goDataType || "bool";
+  if (this._typeBox) this._typeBox.textContent = this.typeLabel;
   if (this._infoBox) this._updateInfoBox();
   this.inConnections = [];
   this.outConnections = [];

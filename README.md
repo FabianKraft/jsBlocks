@@ -54,7 +54,7 @@ jsBlocks is a browser-based simulator for designing and simulating Function Bloc
 - **Line Selection and Deletion** — Click wires to select, Shift+click for multi-select, Delete to remove.
 - **Block Drag Preview** — Visual arrow/line preview while dragging a connection.
 - **Modal Dialogs** — Clean modal system for block configuration (e.g., AND/OR input count, math data type selection).
-- **Toolbar Shortcut Buttons** — Quick-access buttons for common block types (DI, DO, AI, AQ, V, C, &, ≥1, SR, RS, RT, FT, TON, TOF, Comment, Line, Snap).
+- **Toolbar Shortcut Buttons** — Quick-access buttons for common block types (DI, DO, AI, AO, GI, GO, V, C, &, ≥1, SR, RS, RT, FT, TON, TOF, Comment, Line, Snap).
 
 ### Simulation
 
@@ -122,7 +122,9 @@ jsBlocks is a browser-based simulator for designing and simulating Function Bloc
 | DI | Digital input — click to toggle on/off. Supports keyboard key binding during simulation. |
 | DO | Digital output — displays connected boolean value with color feedback. |
 | AI | Analog input — click center to enter value, click left/right to increment/decrement. |
-| AQ | Analog output — displays connected analog value. |
+| AO | Analog output — displays connected analog value. |
+| GI | Generic input — like DI/AI but the data type is selectable (Bool/Int/Real) and the left type label is freely editable (defaults to "GI"). Use it to mark signals coming from a PLS or other system. |
+| GO | Generic output — the counterpart to GI (like DO/AO), with a selectable data type and a freely editable right type label (defaults to "GO"). |
 | CONST | Constant value output. |
 | VAR | Named variable — acts as a named signal bus (all VARs with same name share value). |
 
@@ -314,10 +316,10 @@ The **`NR`** toolbar button exports the current logic as a [Node-RED](https://no
 ### How the exported node behaves
 
 - **Name** — the exported Function node is named after the project.
-- **Inputs** — `DI`/`AI` blocks are driven by incoming messages: `msg.topic` selects the tag, `msg.payload` its value. Example: `{ topic: "S1", payload: true }` sets the `DI` tagged `S1`. The latest value per tag is held in a process image (like a PLC I/O table); messages are not queued.
+- **Inputs** — `DI`/`AI`/`GI` blocks are driven by incoming messages: `msg.topic` selects the tag, `msg.payload` its value. Example: `{ topic: "S1", payload: true }` sets the `DI` tagged `S1`. The latest value per tag is held in a process image (like a PLC I/O table); messages are not queued.
 - **Scan loop** — an internal `setInterval` re-evaluates all blocks once per cycle, in the same execution order as the simulator, using the project's configured simulation cycle (floored at 10 ms). It starts automatically on deploy (*On Start*) and stops cleanly on redeploy (*On Stop*).
 - **Timers** — use real wall-clock time, so `TON`/`TOF`/etc. stay accurate regardless of the scan interval. (Accelerated simulation is intentionally not supported.)
-- **Outputs** — `DO`/`AQ` blocks emit a message in the same shape as the inputs (`{ topic, payload }`) **only when their value changes**, keeping the flow quiet.
+- **Outputs** — `DO`/`AO`/`GO` blocks emit a message in the same shape as the inputs (`{ topic, payload }`) **only when their value changes**, keeping the flow quiet.
 
 ### Robustness
 
@@ -331,7 +333,7 @@ The **`NR`** toolbar button exports the current logic as a [Node-RED](https://no
 
 ### Currently supported blocks
 
-- **I/O:** `DI`, `DO`, `AI`, `AQ`
+- **I/O:** `DI`, `DO`, `AI`, `AO`, `GI`, `GO`
 - **Bit logic:** `AND`, `OR`, `XOR`, `NOT`, `SR`, `RS`, `R_TRIG`, `F_TRIG`
 - **Timers:** `TON`, `TOF`, `TONR`, `1 SEC TIMER` (real wall-clock; ms except `1 SEC TIMER` in seconds)
 - **Math:** `ADD`, `SUB`, `MUL`, `DIV`, `INT_TO_REAL`, `REAL_TO_INT`
