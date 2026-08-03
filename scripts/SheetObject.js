@@ -1676,6 +1676,128 @@ SheetObject.prototype.toggleSettings = function () {
   overlay.classList.toggle("visible");
 };
 
+// Hide the statistics overlay.
+SheetObject.prototype.hideStatistics = function () {
+  var overlay = document.getElementById("statsOverlay");
+  if (overlay) overlay.classList.remove("visible");
+};
+
+// Build a project inventory table (how many of each element exist) and show it
+// in the statistics overlay. Friendly names and categories are taken from the
+// block palette (#blockList); custom blocks and anything not in the palette get
+// a sensible fallback.
+SheetObject.prototype.showStatistics = function () {
+  // Map objectName -> friendly name / category, plus the palette's category order.
+  var nameMap = {};
+  var catMap = {};
+  var catOrder = [];
+  var list = document.getElementById("blockList");
+  if (list) {
+    var groups = list.getElementsByTagName("optgroup");
+    for (var g = 0; g < groups.length; g++) {
+      var cat = groups[g].label;
+      catOrder.push(cat);
+      var opts = groups[g].getElementsByTagName("option");
+      for (var o = 0; o < opts.length; o++) {
+        nameMap[opts[o].value] = opts[o].textContent || opts[o].value;
+        catMap[opts[o].value] = cat;
+      }
+    }
+  }
+
+  // Count every block in the project by its objectName.
+  var counts = {};
+  for (var i = 0; i < this.blockObjects.length; i++) {
+    var on = this.blockObjects[i].objectName;
+    counts[on] = (counts[on] || 0) + 1;
+  }
+
+  function nameOf(on) {
+    if (nameMap[on]) return nameMap[on];
+    if (on && on.indexOf("Custom_") === 0) return on.substring(7);
+    return on;
+  }
+  function catOf(on) {
+    if (catMap[on]) return catMap[on];
+    if (on && on.indexOf("Custom_") === 0) return "Custom";
+    return "Other";
+  }
+
+  // Group the counted types by category.
+  var byCat = {};
+  var total = 0;
+  for (var key in counts) {
+    if (!counts.hasOwnProperty(key)) continue;
+    var c = catOf(key);
+    if (!byCat[c]) byCat[c] = [];
+    byCat[c].push({ name: nameOf(key), count: counts[key] });
+    total += counts[key];
+  }
+
+  // Order categories: palette order first, then any extras (Custom, Other).
+  var orderedCats = [];
+  for (var p = 0; p < catOrder.length; p++) {
+    if (byCat[catOrder[p]] && orderedCats.indexOf(catOrder[p]) === -1)
+      orderedCats.push(catOrder[p]);
+  }
+  for (var extra in byCat) {
+    if (byCat.hasOwnProperty(extra) && orderedCats.indexOf(extra) === -1)
+      orderedCats.push(extra);
+  }
+
+  // Render the table.
+  var html;
+  if (total === 0) {
+    html = '<p style="margin:4px 0;color:#666;">No elements in this project.</p>';
+  } else {
+    html =
+      '<div style="max-height:60vh;overflow:auto;">' +
+      '<table style="border-collapse:collapse;width:100%;font-size:13px;">' +
+      '<thead><tr>' +
+      '<th style="text-align:left;border-bottom:2px solid #888;padding:4px 8px;">Element</th>' +
+      '<th style="text-align:right;border-bottom:2px solid #888;padding:4px 8px;">Count</th>' +
+      "</tr></thead><tbody>";
+    for (var ci = 0; ci < orderedCats.length; ci++) {
+      var cn = orderedCats[ci];
+      var rows = byCat[cn];
+      rows.sort(function (a, b) {
+        return b.count - a.count || (a.name < b.name ? -1 : 1);
+      });
+      html +=
+        '<tr><td colspan="2" style="font-weight:bold;background:#eee;padding:4px 8px;border-bottom:1px solid #ccc;">' +
+        this._escapeHtml(cn) +
+        "</td></tr>";
+      for (var r = 0; r < rows.length; r++) {
+        html +=
+          '<tr><td style="padding:3px 8px 3px 18px;border-bottom:1px solid #eee;">' +
+          this._escapeHtml(rows[r].name) +
+          '</td><td style="text-align:right;padding:3px 8px;border-bottom:1px solid #eee;">' +
+          rows[r].count +
+          "</td></tr>";
+      }
+    }
+    html +=
+      '<tr><td style="font-weight:bold;padding:5px 8px;border-top:2px solid #888;">Total</td>' +
+      '<td style="text-align:right;font-weight:bold;padding:5px 8px;border-top:2px solid #888;">' +
+      total +
+      "</td></tr>";
+    html += "</tbody></table></div>";
+  }
+
+  var content = document.getElementById("statsContent");
+  if (content) content.innerHTML = html;
+  var overlay = document.getElementById("statsOverlay");
+  if (overlay) overlay.classList.add("visible");
+};
+
+// Minimal HTML escaping for text placed into the statistics table.
+SheetObject.prototype._escapeHtml = function (s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+};
+
 // --- Save / Load ---
 
 SheetObject.prototype._createBlockInstance = function (typeName) {
