@@ -574,7 +574,9 @@ OneSecondTimerBlock.prototype.Execute = function () {
 function TonBlock() {
   this.objectName = "Ton";
   this.text = "TON";
-  this.divHeight = 80;
+  // Grid-aligned: 5 cells wide, 6 cells tall (-1 puts the border on a grid line)
+  this.divWidth = 5 * BLOCK_GRID_PX - 1; // 59
+  this.divHeight = 6 * BLOCK_GRID_PX - 1; // 71
   this.startTime = 0;
   this.isTiming = false;
 }
@@ -583,25 +585,39 @@ TonBlock.prototype = new Base();
 
 TonBlock.prototype.create = function (sheet, t, l) {
   Base.prototype.create.call(this, sheet, t, l);
+  var g = BLOCK_GRID_PX;
+  // Labels next to their connectors: IN/Q at pos 3, PT/ET at pos 5.
+  // top = pos*g - 6 centres the 9px label on the connector.
   var labelHTML =
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:8px;padding:0 2px;"><span>IN</span><span>Q</span></div>';
-  labelHTML +=
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:20px;padding:0 2px;"><span>PT</span><span>ET</span></div>';
+    '<div style="position:absolute;left:3px;top:' +
+    (3 * g - 6) +
+    'px;font-size:9px;">IN</div>' +
+    '<div style="position:absolute;right:3px;top:' +
+    (3 * g - 6) +
+    'px;font-size:9px;">Q</div>' +
+    '<div style="position:absolute;left:3px;top:' +
+    (5 * g - 6) +
+    'px;font-size:9px;">PT</div>' +
+    '<div style="position:absolute;right:3px;top:' +
+    (5 * g - 6) +
+    'px;font-size:9px;">ET</div>';
   this.divObj.insertAdjacentHTML("beforeend", labelHTML);
 };
 
 TonBlock.prototype.addConnections = function () {
+  var grid = BLOCK_GRID_PX;
+  var h = 6 * grid - 1; // block height in px (matches constructor)
   this.inConnections[0] = new Connector(
     this,
     1,
-    38,
+    ((3 * grid) / h) * 100, // IN -> pos 3
     "bool",
     "Bool - IN (Start)",
   );
   this.inConnections[1] = new Connector(
     this,
     1,
-    75,
+    ((5 * grid) / h) * 100, // PT -> pos 5
     "int",
     "Int - PT (Preset ms, 1000=1s)",
   );
@@ -609,14 +625,14 @@ TonBlock.prototype.addConnections = function () {
   this.outConnections[0] = new Connector(
     this,
     0,
-    38,
+    ((3 * grid) / h) * 100, // Q -> pos 3
     "bool",
     "Bool - Q (Output)",
   );
   this.outConnections[1] = new Connector(
     this,
     0,
-    75,
+    ((5 * grid) / h) * 100, // ET -> pos 5
     "int",
     "Int - ET (Elapsed ms)",
   );
@@ -662,7 +678,9 @@ TonBlock.prototype.Execute = function () {
 function TofBlock() {
   this.objectName = "Tof";
   this.text = "TOF";
-  this.divHeight = 80;
+  // Grid-aligned: 5 cells wide, 6 cells tall (-1 puts the border on a grid line)
+  this.divWidth = 5 * BLOCK_GRID_PX - 1; // 59
+  this.divHeight = 6 * BLOCK_GRID_PX - 1; // 71
   this.startTime = 0;
   this.isTiming = false;
   this.wasOn = false;
@@ -672,19 +690,39 @@ TofBlock.prototype = new Base();
 
 TofBlock.prototype.create = function (sheet, t, l) {
   Base.prototype.create.call(this, sheet, t, l);
+  var g = BLOCK_GRID_PX;
+  // Labels next to their connectors: IN/Q at pos 3, PT/ET at pos 5.
+  // top = pos*g - 6 centres the 9px label on the connector.
   var labelHTML =
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:8px;padding:0 2px;"><span>IN</span><span>Q</span></div>';
-  labelHTML +=
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:20px;padding:0 2px;"><span>PT</span><span>ET</span></div>';
+    '<div style="position:absolute;left:3px;top:' +
+    (3 * g - 6) +
+    'px;font-size:9px;">IN</div>' +
+    '<div style="position:absolute;right:3px;top:' +
+    (3 * g - 6) +
+    'px;font-size:9px;">Q</div>' +
+    '<div style="position:absolute;left:3px;top:' +
+    (5 * g - 6) +
+    'px;font-size:9px;">PT</div>' +
+    '<div style="position:absolute;right:3px;top:' +
+    (5 * g - 6) +
+    'px;font-size:9px;">ET</div>';
   this.divObj.insertAdjacentHTML("beforeend", labelHTML);
 };
 
 TofBlock.prototype.addConnections = function () {
-  this.inConnections[0] = new Connector(this, 1, 38, "bool", "Bool - IN");
+  var grid = BLOCK_GRID_PX;
+  var h = 6 * grid - 1; // block height in px (matches constructor)
+  this.inConnections[0] = new Connector(
+    this,
+    1,
+    ((3 * grid) / h) * 100, // IN -> pos 3
+    "bool",
+    "Bool - IN",
+  );
   this.inConnections[1] = new Connector(
     this,
     1,
-    75,
+    ((5 * grid) / h) * 100, // PT -> pos 5
     "int",
     "Int - PT (Preset ms, 1000=1s)",
   );
@@ -692,14 +730,14 @@ TofBlock.prototype.addConnections = function () {
   this.outConnections[0] = new Connector(
     this,
     0,
-    38,
+    ((3 * grid) / h) * 100, // Q -> pos 3
     "bool",
     "Bool - Q (Output)",
   );
   this.outConnections[1] = new Connector(
     this,
     0,
-    75,
+    ((5 * grid) / h) * 100, // ET -> pos 5
     "int",
     "Int - ET (Elapsed ms)",
   );
@@ -750,7 +788,9 @@ TofBlock.prototype.Execute = function () {
 function TonrBlock() {
   this.objectName = "Tonr";
   this.text = "TONR";
-  this.divHeight = 100;
+  // Grid-aligned: 5 cells wide, 8 cells tall (-1 puts the border on a grid line)
+  this.divWidth = 5 * BLOCK_GRID_PX - 1; // 59
+  this.divHeight = 8 * BLOCK_GRID_PX - 1; // 95
   this.accumulatedTime = 0;
   this.lastTime = 0;
   this.isTiming = false;
@@ -760,34 +800,49 @@ TonrBlock.prototype = new Base();
 
 TonrBlock.prototype.create = function (sheet, t, l) {
   Base.prototype.create.call(this, sheet, t, l);
+  var g = BLOCK_GRID_PX;
+  // Labels next to their connectors: IN/Q at pos 3, R/ET at pos 5, PT at pos 7.
+  // top = pos*g - 6 centres the 9px label on the connector.
   var labelHTML =
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:4px;padding:0 2px;"><span>IN</span><span>Q</span></div>';
-  labelHTML +=
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:12px;padding:0 2px;"><span>R</span><span>ET</span></div>';
-  labelHTML +=
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:12px;padding:0 2px;"><span>PT</span><span></span></div>';
+    '<div style="position:absolute;left:3px;top:' +
+    (3 * g - 6) +
+    'px;font-size:9px;">IN</div>' +
+    '<div style="position:absolute;right:3px;top:' +
+    (3 * g - 6) +
+    'px;font-size:9px;">Q</div>' +
+    '<div style="position:absolute;left:3px;top:' +
+    (5 * g - 6) +
+    'px;font-size:9px;">R</div>' +
+    '<div style="position:absolute;right:3px;top:' +
+    (5 * g - 6) +
+    'px;font-size:9px;">ET</div>' +
+    '<div style="position:absolute;left:3px;top:' +
+    (7 * g - 6) +
+    'px;font-size:9px;">PT</div>';
   this.divObj.insertAdjacentHTML("beforeend", labelHTML);
 };
 
 TonrBlock.prototype.addConnections = function () {
+  var grid = BLOCK_GRID_PX;
+  var h = 8 * grid - 1; // block height in px (matches constructor)
   this.inConnections[0] = new Connector(
     this,
     1,
-    30,
+    ((3 * grid) / h) * 100, // IN -> pos 3
     "bool",
     "Bool - IN (Start)",
   );
   this.inConnections[1] = new Connector(
     this,
     1,
-    55,
+    ((5 * grid) / h) * 100, // R -> pos 5
     "bool",
     "Bool - R (Reset)",
   );
   this.inConnections[2] = new Connector(
     this,
     1,
-    80,
+    ((7 * grid) / h) * 100, // PT -> pos 7
     "int",
     "Int - PT (Preset ms, 1000=1s)",
   );
@@ -795,14 +850,14 @@ TonrBlock.prototype.addConnections = function () {
   this.outConnections[0] = new Connector(
     this,
     0,
-    30,
+    ((3 * grid) / h) * 100, // Q -> pos 3
     "bool",
     "Bool - Q (Output)",
   );
   this.outConnections[1] = new Connector(
     this,
     0,
-    55,
+    ((5 * grid) / h) * 100, // ET -> pos 5
     "int",
     "Int - ET (Elapsed ms)",
   );
@@ -857,27 +912,55 @@ function SetResetBlock() {
   this.objectName = "SetReset";
   this.text = "SR";
   this.lastOutput = 0;
+  // Grid-aligned: 5 cells wide, 5 cells tall (-1 puts the border on a grid line)
+  this.divWidth = 5 * BLOCK_GRID_PX - 1; // 59
+  this.divHeight = 5 * BLOCK_GRID_PX - 1; // 59
 }
 
 SetResetBlock.prototype = new Base();
 
 SetResetBlock.prototype.create = function (sheet, t, l) {
   Base.prototype.create.call(this, sheet, t, l);
+  var g = BLOCK_GRID_PX;
+  // Labels sit next to their connectors: S1 at pos 2, R + Q at pos 4.
+  // top = pos*g - 6 centres the 9px label on the connector.
   var labelHTML =
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:8px;padding:0 2px;"><span>S1</span><span>Q</span></div>';
-  labelHTML +=
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:20px;padding:0 2px;"><span>R</span><span></span></div>';
+    '<div style="position:absolute;left:3px;top:' +
+    (2 * g - 6) +
+    'px;font-size:9px;">S1</div>' +
+    '<div style="position:absolute;left:3px;top:' +
+    (4 * g - 6) +
+    'px;font-size:9px;">R</div>' +
+    '<div style="position:absolute;right:3px;top:' +
+    (4 * g - 6) +
+    'px;font-size:9px;">Q</div>';
   this.divObj.insertAdjacentHTML("beforeend", labelHTML);
 };
 
 SetResetBlock.prototype.addConnections = function () {
-  this.inConnections[0] = new Connector(this, 1, 38, "bool", "Bool - Set1");
-  this.inConnections[1] = new Connector(this, 1, 75, "bool", "Bool - Reset");
+  var grid = BLOCK_GRID_PX;
+  var h = 5 * grid - 1; // block height in px (matches constructor)
+  // Connector expects a Y as a percentage of block height; build the
+  // grid-aligned pixel offset (pos * grid) and convert it back.
+  this.inConnections[0] = new Connector(
+    this,
+    1,
+    ((2 * grid) / h) * 100, // S  -> pos 2
+    "bool",
+    "Bool - Set1",
+  );
+  this.inConnections[1] = new Connector(
+    this,
+    1,
+    ((4 * grid) / h) * 100, // R  -> pos 4
+    "bool",
+    "Bool - Reset",
+  );
 
   this.outConnections[0] = new Connector(
     this,
     0,
-    38,
+    ((4 * grid) / h) * 100, // Q  -> pos 4
     "bool",
     "Bool - Output Q",
   );
@@ -1017,27 +1100,55 @@ function ResetSetBlock() {
   this.objectName = "ResetSet";
   this.text = "RS";
   this.lastOutput = 0;
+  // Grid-aligned: 5 cells wide, 5 cells tall (-1 puts the border on a grid line)
+  this.divWidth = 5 * BLOCK_GRID_PX - 1; // 59
+  this.divHeight = 5 * BLOCK_GRID_PX - 1; // 59
 }
 
 ResetSetBlock.prototype = new Base();
 
 ResetSetBlock.prototype.create = function (sheet, t, l) {
   Base.prototype.create.call(this, sheet, t, l);
+  var g = BLOCK_GRID_PX;
+  // Labels sit next to their connectors: S at pos 2, R1 + Q at pos 4.
+  // top = pos*g - 6 centres the 9px label on the connector.
   var labelHTML =
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:8px;padding:0 2px;"><span>S</span><span>Q</span></div>';
-  labelHTML +=
-    '<div style="display:flex;justify-content:space-between;font-size:9px;margin-top:20px;padding:0 2px;"><span>R1</span><span></span></div>';
+    '<div style="position:absolute;left:3px;top:' +
+    (2 * g - 6) +
+    'px;font-size:9px;">S</div>' +
+    '<div style="position:absolute;left:3px;top:' +
+    (4 * g - 6) +
+    'px;font-size:9px;">R1</div>' +
+    '<div style="position:absolute;right:3px;top:' +
+    (4 * g - 6) +
+    'px;font-size:9px;">Q</div>';
   this.divObj.insertAdjacentHTML("beforeend", labelHTML);
 };
 
 ResetSetBlock.prototype.addConnections = function () {
-  this.inConnections[0] = new Connector(this, 1, 38, "bool", "Bool - Set");
-  this.inConnections[1] = new Connector(this, 1, 75, "bool", "Bool - Reset1");
+  var grid = BLOCK_GRID_PX;
+  var h = 5 * grid - 1; // block height in px (matches constructor)
+  // Connector expects a Y as a percentage of block height; build the
+  // grid-aligned pixel offset (pos * grid) and convert it back.
+  this.inConnections[0] = new Connector(
+    this,
+    1,
+    ((2 * grid) / h) * 100, // S  -> pos 2
+    "bool",
+    "Bool - Set",
+  );
+  this.inConnections[1] = new Connector(
+    this,
+    1,
+    ((4 * grid) / h) * 100, // R1 -> pos 4
+    "bool",
+    "Bool - Reset1",
+  );
 
   this.outConnections[0] = new Connector(
     this,
     0,
-    38,
+    ((4 * grid) / h) * 100, // Q  -> pos 4
     "bool",
     "Bool - Output Q",
   );
@@ -2129,8 +2240,9 @@ CmpBlock.prototype.Execute = function () {
 //**************************************************************************
 function ConstantBlock() {
   this.objectName = "Constant";
-  this.divHeight = 16;
-  this.divWidth = 40;
+  // Grid-aligned: 4 cells wide, 2 cells tall (-1 puts the border on a grid line)
+  this.divWidth = 4 * BLOCK_GRID_PX - 1; // 47
+  this.divHeight = 2 * BLOCK_GRID_PX - 1; // 23
   this.constantValue = 0;
   this.text = "0";
   this._needsInitialSettings = true;
@@ -2139,6 +2251,16 @@ ConstantBlock.prototype = new Base();
 
 ConstantBlock.prototype.create = function (sheet, t, l) {
   Base.prototype.create.call(this, sheet, t, l);
+  // Uniform lighter-grey fill with the value centred (no darker header bar).
+  var light = "rgb(223,223,231)";
+  this.divObj.style.backgroundColor = light;
+  this.headerDiv.style.backgroundColor = light;
+  this.headerDiv.style.padding = "0";
+  this.headerDiv.style.height = "100%";
+  this.headerDiv.style.boxSizing = "border-box";
+  this.headerDiv.style.display = "flex";
+  this.headerDiv.style.alignItems = "center";
+  this.headerDiv.style.justifyContent = "center";
   if (this._needsInitialSettings) {
     this._needsInitialSettings = false;
     this.openSettings();
@@ -2164,10 +2286,13 @@ ConstantBlock.prototype.openSettings = function () {
 };
 
 ConstantBlock.prototype.addConnections = function () {
+  var grid = BLOCK_GRID_PX;
+  var h = 2 * grid - 1; // block height in px (matches constructor)
+  // output at position 1 cell -> vertical centre, on a grid line.
   this.outConnections[0] = new Connector(
     this,
     0,
-    50,
+    ((1 * grid) / h) * 100,
     "int",
     "Int - Constant value",
   );
@@ -2182,19 +2307,37 @@ ConstantBlock.prototype.Execute = function () {
 //**************************************************************************
 function VariableBlock() {
   this.objectName = "Variable";
-  this.divHeight = 16;
-  this.divWidth = 40;
+  // Grid-aligned: 4 cells wide, 2 cells tall (-1 puts the border on a grid line)
+  this.divWidth = 4 * BLOCK_GRID_PX - 1; // 47
+  this.divHeight = 2 * BLOCK_GRID_PX - 1; // 23
   this.variableValue = 0;
   this.text = 0;
 }
 
 VariableBlock.prototype = new Base();
 
+VariableBlock.prototype.create = function (sheet, t, l) {
+  Base.prototype.create.call(this, sheet, t, l);
+  // Uniform lighter-grey fill with the value centred (no darker header bar).
+  var light = "rgb(223,223,231)";
+  this.divObj.style.backgroundColor = light;
+  this.headerDiv.style.backgroundColor = light;
+  this.headerDiv.style.padding = "0";
+  this.headerDiv.style.height = "100%";
+  this.headerDiv.style.boxSizing = "border-box";
+  this.headerDiv.style.display = "flex";
+  this.headerDiv.style.alignItems = "center";
+  this.headerDiv.style.justifyContent = "center";
+};
+
 VariableBlock.prototype.addConnections = function () {
+  var grid = BLOCK_GRID_PX;
+  var h = 2 * grid - 1; // block height in px (matches constructor)
+  // input at position 1 cell -> vertical centre, on a grid line.
   this.inConnections[0] = new Connector(
     this,
     1,
-    50,
+    ((1 * grid) / h) * 100,
     "int",
     "Int - Variable input",
   );
@@ -3545,23 +3688,56 @@ SubtractBlock.prototype.Execute = function () {
 
 function NotBlock() {
   this.objectName = "Not";
-  this.text = "NOT";
-  this.divHeight = 30;
-  this.divWidth = 100;
+  this.text = "1"; // IEC symbol: a "1" box with an inversion bubble on the output
+  // Grid-aligned: 2 cells wide, 2 cells tall (-1 puts the border on a grid line)
+  this.divWidth = 2 * BLOCK_GRID_PX - 1; // 23
+  this.divHeight = 2 * BLOCK_GRID_PX - 1; // 23
 }
 
 NotBlock.prototype = new Base();
 
+NotBlock.prototype.create = function (sheet, t, l) {
+  Base.prototype.create.call(this, sheet, t, l);
+  // Fill the whole block with the darker grey and centre the "1".
+  var dark = "rgb(201,203,217)";
+  this.divObj.style.backgroundColor = dark;
+  this.headerDiv.style.backgroundColor = dark;
+  this.headerDiv.style.padding = "0";
+  this.headerDiv.style.height = "100%";
+  this.headerDiv.style.boxSizing = "border-box";
+  this.headerDiv.style.display = "flex";
+  this.headerDiv.style.alignItems = "center";
+  this.headerDiv.style.justifyContent = "center";
+  this.headerDiv.style.fontSize = "12px";
+};
+
 NotBlock.prototype.addConnections = function () {
-  this.inConnections[0] = new Connector(this, 1, 50, "bool", "Bool - Input");
+  var grid = BLOCK_GRID_PX;
+  var h = 2 * grid - 1; // block height in px (matches constructor)
+  // input/output at position 1 cell -> vertical centre, on a grid line.
+  // Connector expects a Y as a percentage of block height, so convert.
+  var pos = 1 * grid;
+  this.inConnections[0] = new Connector(
+    this,
+    1,
+    (pos / h) * 100,
+    "bool",
+    "Bool - Input",
+  );
 
   this.outConnections[0] = new Connector(
     this,
     0,
-    50,
+    (pos / h) * 100,
     "bool",
     "Bool - Inverted output",
   );
+  // The inversion is intrinsic to the NOT block (done in Execute), so show the
+  // bubble permanently on the output and lock it: dblclick must not toggle or
+  // remove it. inverted stays false so the block's own inversion is not
+  // doubled by the connector's effective-value logic (and export stays correct).
+  this.outConnections[0].lockInvert = true;
+  this.outConnections[0].invertCircle.style.display = "block";
 };
 
 NotBlock.prototype.Execute = function () {

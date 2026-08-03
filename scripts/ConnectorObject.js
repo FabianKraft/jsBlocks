@@ -174,6 +174,9 @@ Connector.prototype.dblclickHandler = function (e) {
 
   if (this.dataType !== "bool") return;
   if (this.instruction.sheetObject.simulateOn) return;
+  // Some connectors have a fixed inversion bubble (e.g. the NOT output) that
+  // must not be toggled or removed by the user.
+  if (this.lockInvert) return;
   this.inverted = !this.inverted;
   this.invertCircle.style.display = this.inverted ? "block" : "none";
 };
