@@ -21,6 +21,12 @@
 //
 //////////////////////////////////////////////////////////
 
+// Fixed grid pitch (px) used for the grid-aligned sizing/pin layout of the
+// AND and OR blocks. Intentionally constant: changing the sheet's display grid
+// must NOT resize those blocks or move their inputs/outputs. Adjust here only
+// if the block raster itself should change.
+var BLOCK_GRID_PX = 12;
+
 //**************************************************************************
 //
 //			Define an AND BLOCK
@@ -30,10 +36,8 @@ function AndBlock() {
   this._handlesOwnConnectors = true;
   this.objectName = "And";
   this.text = "&";
-  this.YOffset = 25;
   this.stack = 1;
   this.numberInputs = 2;
-  this.inputFactor = 50;
   this._needsInitialSettings = true;
 }
 AndBlock.prototype = new Base(); //Derive from Base class
@@ -48,30 +52,32 @@ AndBlock.prototype.create = function (sheet, t, l) {
 
 AndBlock.prototype._applyInputCount = function (val) {
   this.numberInputs = val;
-  this.divHeight = 80;
-  if (this.numberInputs > 4) {
-    this.divHeight = 80 + (this.numberInputs - 4) * 20;
+  var grid = BLOCK_GRID_PX;
+  // Grid-aligned sizing (see addConnections for the matching pin offsets):
+  //   width  = 5 cells fixed        -> (5 * grid) - 1
+  //   height = 2 cells per input    -> (n * 2 * grid) - 1
+  // The -1 lets the 1px border land exactly on a grid line so the block
+  // spans a whole number of cells in both directions.
+  this.divWidth = 5 * grid - 1;
+  this.divHeight = this.numberInputs * 2 * grid - 1;
+  if (this.divObj) {
+    this.divObj.style.width = this.divWidth;
+    this.divObj.style.height = this.divHeight;
   }
-  this.divObj.style.height = this.divHeight;
-  if (this.numberInputs == 2) this.YOffset = 25;
-  else if (this.numberInputs == 3) this.YOffset = 15;
-  else if (this.numberInputs == 4) this.YOffset = 10;
-  else this.YOffset = (this.numberInputs + 45) / this.numberInputs;
-  this.inputFactor = 100 / this.numberInputs;
 };
 
 AndBlock.prototype.openSettings = function (isNew) {
   var self = this;
   var html =
     "<h3>AND Settings</h3>" +
-    '<div class="modal-row"><label>Eing\u00e4nge (2-8):</label>' +
+    '<div class="modal-row"><label>Eing\u00e4nge (2-30):</label>' +
     '<input type="text" id="modalInputs" value="' +
     self.numberInputs +
     '"></div>';
 
   Base.showModal(html, function () {
     var val = parseInt(document.getElementById("modalInputs").value);
-    if (val >= 2 && val <= 8) {
+    if (val >= 2 && val <= 30) {
       // Remove old connectors
       for (var i = 0; i < self.inConnections.length; i++) {
         if (self.inConnections[i]) self.inConnections[i].removeConnectedTo();
@@ -90,23 +96,28 @@ AndBlock.prototype.openSettings = function (isNew) {
 
 AndBlock.prototype.addConnections = function () {
   //Override connections function
-  for (
-    connectorIndex = 0;
-    connectorIndex < this.numberInputs;
-    connectorIndex++
-  ) {
+  var grid = BLOCK_GRID_PX;
+  var n = this.numberInputs;
+  var h = n * 2 * grid - 1; // block height in px (matches _applyInputCount)
+  // Connector expects a Y position as a percentage of the block height, so we
+  // build the grid-aligned pixel offset and convert it back to a percentage.
+  for (var connectorIndex = 0; connectorIndex < n; connectorIndex++) {
+    // input i (1-based): ((i-1) * 2 * grid) + grid  -> lands on a grid line
+    var e = connectorIndex * 2 * grid + grid;
     this.inConnections[connectorIndex] = new Connector(
       this,
       1,
-      connectorIndex * this.inputFactor + this.YOffset,
+      (e / h) * 100,
       "bool",
       "Bool - IN" + (connectorIndex + 1),
     );
   }
+  // output: ((n * 2) / 2) * grid  ==  n * grid  (vertical centre, on a grid line)
+  var a = n * grid;
   this.outConnections[0] = new Connector(
     this,
     0,
-    50,
+    (a / h) * 100,
     "bool",
     "Bool - AND result",
   );
@@ -134,10 +145,8 @@ function OrBlock() {
   this._handlesOwnConnectors = true;
   this.objectName = "Or";
   this.text = "\u22651";
-  this.YOffset = 25;
   this.stack = 0;
   this.numberInputs = 2;
-  this.inputFactor = 50;
   this._needsInitialSettings = true;
 }
 
@@ -153,30 +162,32 @@ OrBlock.prototype.create = function (sheet, t, l) {
 
 OrBlock.prototype._applyInputCount = function (val) {
   this.numberInputs = val;
-  this.divHeight = 80;
-  if (this.numberInputs > 4) {
-    this.divHeight = 80 + (this.numberInputs - 4) * 20;
+  var grid = BLOCK_GRID_PX;
+  // Grid-aligned sizing (see addConnections for the matching pin offsets):
+  //   width  = 5 cells fixed        -> (5 * grid) - 1
+  //   height = 2 cells per input    -> (n * 2 * grid) - 1
+  // The -1 lets the 1px border land exactly on a grid line so the block
+  // spans a whole number of cells in both directions.
+  this.divWidth = 5 * grid - 1;
+  this.divHeight = this.numberInputs * 2 * grid - 1;
+  if (this.divObj) {
+    this.divObj.style.width = this.divWidth;
+    this.divObj.style.height = this.divHeight;
   }
-  this.divObj.style.height = this.divHeight;
-  if (this.numberInputs == 2) this.YOffset = 25;
-  else if (this.numberInputs == 3) this.YOffset = 15;
-  else if (this.numberInputs == 4) this.YOffset = 10;
-  else this.YOffset = (this.numberInputs + 45) / this.numberInputs;
-  this.inputFactor = 100 / this.numberInputs;
 };
 
 OrBlock.prototype.openSettings = function (isNew) {
   var self = this;
   var html =
     "<h3>OR Settings</h3>" +
-    '<div class="modal-row"><label>Eing\u00e4nge (2-8):</label>' +
+    '<div class="modal-row"><label>Eing\u00e4nge (2-30):</label>' +
     '<input type="text" id="modalInputs" value="' +
     self.numberInputs +
     '"></div>';
 
   Base.showModal(html, function () {
     var val = parseInt(document.getElementById("modalInputs").value);
-    if (val >= 2 && val <= 8) {
+    if (val >= 2 && val <= 30) {
       for (var i = 0; i < self.inConnections.length; i++) {
         if (self.inConnections[i]) self.inConnections[i].removeConnectedTo();
       }
@@ -193,24 +204,28 @@ OrBlock.prototype.openSettings = function (isNew) {
 };
 
 OrBlock.prototype.addConnections = function () {
-  for (
-    connectorIndex = 0;
-    connectorIndex < this.numberInputs;
-    connectorIndex++
-  ) {
+  var grid = BLOCK_GRID_PX;
+  var n = this.numberInputs;
+  var h = n * 2 * grid - 1; // block height in px (matches _applyInputCount)
+  // Connector expects a Y position as a percentage of the block height, so we
+  // build the grid-aligned pixel offset and convert it back to a percentage.
+  for (var connectorIndex = 0; connectorIndex < n; connectorIndex++) {
+    // input i (1-based): ((i-1) * 2 * grid) + grid  -> lands on a grid line
+    var e = connectorIndex * 2 * grid + grid;
     this.inConnections[connectorIndex] = new Connector(
       this,
       1,
-      connectorIndex * this.inputFactor + this.YOffset,
+      (e / h) * 100,
       "bool",
       "Bool - IN" + (connectorIndex + 1),
     );
   }
-
+  // output: ((n * 2) / 2) * grid  ==  n * grid  (vertical centre, on a grid line)
+  var a = n * grid;
   this.outConnections[0] = new Connector(
     this,
     0,
-    50,
+    (a / h) * 100,
     "bool",
     "Bool - OR result",
   );
@@ -894,10 +909,8 @@ function XorBlock() {
   this._handlesOwnConnectors = true;
   this.objectName = "Xor";
   this.text = "x";
-  this.YOffset = 25;
   this.stack = 0;
   this.numberInputs = 2;
-  this.inputFactor = 50;
   this._needsInitialSettings = true;
 }
 XorBlock.prototype = new Base();
@@ -912,30 +925,32 @@ XorBlock.prototype.create = function (sheet, t, l) {
 
 XorBlock.prototype._applyInputCount = function (val) {
   this.numberInputs = val;
-  this.divHeight = 80;
-  if (this.numberInputs > 4) {
-    this.divHeight = 80 + (this.numberInputs - 4) * 20;
+  var grid = BLOCK_GRID_PX;
+  // Grid-aligned sizing (see addConnections for the matching pin offsets):
+  //   width  = 5 cells fixed        -> (5 * grid) - 1
+  //   height = 2 cells per input    -> (n * 2 * grid) - 1
+  // The -1 lets the 1px border land exactly on a grid line so the block
+  // spans a whole number of cells in both directions.
+  this.divWidth = 5 * grid - 1;
+  this.divHeight = this.numberInputs * 2 * grid - 1;
+  if (this.divObj) {
+    this.divObj.style.width = this.divWidth;
+    this.divObj.style.height = this.divHeight;
   }
-  this.divObj.style.height = this.divHeight;
-  if (this.numberInputs == 2) this.YOffset = 25;
-  else if (this.numberInputs == 3) this.YOffset = 15;
-  else if (this.numberInputs == 4) this.YOffset = 10;
-  else this.YOffset = (this.numberInputs + 45) / this.numberInputs;
-  this.inputFactor = 100 / this.numberInputs;
 };
 
 XorBlock.prototype.openSettings = function (isNew) {
   var self = this;
   var html =
     "<h3>XOR Einstellungen</h3>" +
-    '<div class="modal-row"><label>Eing\u00e4nge (2-8):</label>' +
+    '<div class="modal-row"><label>Eing\u00e4nge (2-30):</label>' +
     '<input type="text" id="modalInputs" value="' +
     self.numberInputs +
     '"></div>';
 
   Base.showModal(html, function () {
     var val = parseInt(document.getElementById("modalInputs").value);
-    if (val >= 2 && val <= 8) {
+    if (val >= 2 && val <= 30) {
       for (var i = 0; i < self.inConnections.length; i++) {
         if (self.inConnections[i]) self.inConnections[i].removeConnectedTo();
       }
@@ -952,23 +967,28 @@ XorBlock.prototype.openSettings = function (isNew) {
 };
 
 XorBlock.prototype.addConnections = function () {
-  for (
-    connectorIndex = 0;
-    connectorIndex < this.numberInputs;
-    connectorIndex++
-  ) {
+  var grid = BLOCK_GRID_PX;
+  var n = this.numberInputs;
+  var h = n * 2 * grid - 1; // block height in px (matches _applyInputCount)
+  // Connector expects a Y position as a percentage of the block height, so we
+  // build the grid-aligned pixel offset and convert it back to a percentage.
+  for (var connectorIndex = 0; connectorIndex < n; connectorIndex++) {
+    // input i (1-based): ((i-1) * 2 * grid) + grid  -> lands on a grid line
+    var e = connectorIndex * 2 * grid + grid;
     this.inConnections[connectorIndex] = new Connector(
       this,
       1,
-      connectorIndex * this.inputFactor + this.YOffset,
+      (e / h) * 100,
       "bool",
       "Bool - IN" + (connectorIndex + 1),
     );
   }
+  // output: ((n * 2) / 2) * grid  ==  n * grid  (vertical centre, on a grid line)
+  var a = n * grid;
   this.outConnections[0] = new Connector(
     this,
     0,
-    50,
+    (a / h) * 100,
     "bool",
     "Bool - XOR Ergebnis",
   );
