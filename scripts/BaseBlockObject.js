@@ -336,6 +336,11 @@ Base.showModal = function (contentHTML, onSave, onCancel) {
   document.getElementById("modalSave").addEventListener("click", function () {
     overlay.classList.remove("visible");
     if (onSave) onSave();
+    // A Label In name/comment change must propagate to the Label Out panels
+    // that derive their comment from it. Run this BEFORE the cross-reference
+    // refresh so it reads each Label Out's freshly derived comment.
+    if (window.my_Sheet && my_Sheet.refreshLabelPanels)
+      my_Sheet.refreshLabelPanels();
     // A settings edit may have changed a tag/label/comment — keep the
     // cross-reference panel in sync.
     if (window.my_Sheet && my_Sheet.crossRef) my_Sheet.crossRef.refresh();

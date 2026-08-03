@@ -4578,7 +4578,8 @@ LabelOutPanelBlock.prototype.create = function (sheet, t, l) {
   this._typeBox = document.createElement("div");
   this._typeBox.style.cssText =
     "position:absolute;left:0;top:0;width:45px;height:100%;background:rgb(201,203,217);border-right:1px solid black;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:10px;font-family:Calibri,Arial,sans-serif;";
-  this._typeBox.innerHTML = "LABEL";
+  this._typeBox.innerHTML =
+    (this.sheetObject && this.sheetObject.labelPanelText) || "LABEL";
   this.divObj.appendChild(this._typeBox);
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
@@ -4591,7 +4592,25 @@ LabelOutPanelBlock.prototype.create = function (sheet, t, l) {
   }
 };
 
+// The Label Out comment is not editable here — it is taken from the Label In
+// panel that shares this label name. If none exists, show "No Reference!".
+LabelOutPanelBlock.prototype._resolveComment = function () {
+  var sheet = this.sheetObject;
+  if (sheet && sheet.blockObjects) {
+    for (var i = 0; i < sheet.blockObjects.length; i++) {
+      var b = sheet.blockObjects[i];
+      if (b.objectName === "LabelInPanel" && b.labelName === this.labelName) {
+        return b.comment || "";
+      }
+    }
+  }
+  return "No Reference!";
+};
+
 LabelOutPanelBlock.prototype._updateInfoBox = function () {
+  // Store the derived comment on the block so the cross-reference panel and
+  // exports (which read this.comment) stay consistent with what is shown here.
+  this.comment = this._resolveComment();
   this._infoBox.innerHTML =
     '<div style="font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' +
     this.labelName +
@@ -4609,10 +4628,6 @@ LabelOutPanelBlock.prototype.openSettings = function () {
     '<input type="text" id="modalLabelName" value="' +
     self.labelName +
     '"></div>' +
-    '<div class="modal-row"><label>Comment:</label>' +
-    '<input type="text" id="modalComment" value="' +
-    self.comment +
-    '"></div>' +
     '<div class="modal-row"><label>Data type:</label>' +
     '<select id="modalLabelType">' +
     '<option value="bool"' +
@@ -4627,7 +4642,6 @@ LabelOutPanelBlock.prototype.openSettings = function () {
     "</select></div>";
   Base.showModal(html, function () {
     self.labelName = document.getElementById("modalLabelName").value || "???";
-    self.comment = document.getElementById("modalComment").value || "";
     var newType = document.getElementById("modalLabelType").value;
     if (newType !== self.labelType || self.outConnections.length === 0) {
       for (var i = 0; i < self.outConnections.length; i++)
@@ -4717,7 +4731,8 @@ LabelInPanelBlock.prototype.create = function (sheet, t, l) {
   this._typeBox = document.createElement("div");
   this._typeBox.style.cssText =
     "position:absolute;right:0;top:0;width:45px;height:100%;background:rgb(201,203,217);border-left:1px solid black;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:10px;font-family:Calibri,Arial,sans-serif;";
-  this._typeBox.innerHTML = "LABEL";
+  this._typeBox.innerHTML =
+    (this.sheetObject && this.sheetObject.labelPanelText) || "LABEL";
   this.divObj.appendChild(this._typeBox);
   if (this._needsInitialSettings) {
     this._needsInitialSettings = false;
@@ -4984,7 +4999,8 @@ TagLabelOutBlock.prototype.create = function (sheet, t, l) {
   this._typeBox = document.createElement("div");
   this._typeBox.style.cssText =
     "position:absolute;left:0;top:0;width:45px;height:100%;background:rgb(201,203,217);border-right:1px solid black;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:10px;font-family:Calibri,Arial,sans-serif;";
-  this._typeBox.innerHTML = "LABEL";
+  this._typeBox.innerHTML =
+    (this.sheetObject && this.sheetObject.labelPanelText) || "LABEL";
   this.divObj.appendChild(this._typeBox);
   this._infoBox = document.createElement("div");
   this._infoBox.style.cssText =
@@ -5121,7 +5137,8 @@ TagLabelInBlock.prototype.create = function (sheet, t, l) {
   this._typeBox = document.createElement("div");
   this._typeBox.style.cssText =
     "position:absolute;right:0;top:0;width:45px;height:100%;background:rgb(201,203,217);border-left:1px solid black;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:10px;font-family:Calibri,Arial,sans-serif;";
-  this._typeBox.innerHTML = "LABEL";
+  this._typeBox.innerHTML =
+    (this.sheetObject && this.sheetObject.labelPanelText) || "LABEL";
   this.divObj.appendChild(this._typeBox);
   if (this._needsInitialSettings) {
     this._needsInitialSettings = false;

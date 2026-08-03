@@ -1425,6 +1425,24 @@
                         <option value="500">500 ms</option>
                     </select>
                 </div>
+                <div class="settings-section">Label</div>
+                <div class="settings-row">
+                    <label for="settingsLabelPanelText">Label Panel Text</label>
+                    <input
+                        type="text"
+                        id="settingsLabelPanelText"
+                        value="LABEL"
+                        style="
+                            width: 90px;
+                            padding: 2px 4px;
+                            font-size: 12px;
+                            font-family: Calibri, Arial, sans-serif;
+                            border: 1px solid #aaa;
+                            border-radius: 3px;
+                        "
+                        oninput="my_Sheet.setLabelPanelText(this.value)"
+                    />
+                </div>
                 <button
                     class="settings-close-btn"
                     onclick="my_Sheet.toggleSettings()"

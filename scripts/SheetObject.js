@@ -75,6 +75,10 @@ function SheetObject() {
   // Project name (used in the saved file and its filename).
   this.projectName = "";
 
+  // Caption shown in the small type box of every Label In/Out panel. Purely
+  // cosmetic (does not affect label name, simulation, or export).
+  this.labelPanelText = "LABEL";
+
   // Position viewport below toolbar
   var self = this;
   setTimeout(function () {
@@ -1503,6 +1507,8 @@ SheetObject.prototype._deleteBlocks = function (blocks) {
   for (var x = 0; x < this.blockObjects.length; x++) {
     this.blockObjects[x].indexNumber = x;
   }
+  // A deleted Label In may leave Label Out panels without a reference.
+  this.refreshLabelPanels();
 };
 
 // --- PDF Export ---
@@ -1695,6 +1701,7 @@ SheetObject.prototype._collectSettings = function () {
     delaySymbolVisible: this.delaySymbolVisible,
     currentPageFormat: this.currentPageFormat,
     simulationCycleMs: this.simulationCycleMs,
+    labelPanelText: this.labelPanelText,
   };
 };
 
@@ -1745,6 +1752,13 @@ SheetObject.prototype._applySettings = function (settings) {
     this.setSimulationSpeed(settings.simulationCycleMs);
   if (settings.currentPageFormat != null)
     this.setPageFormat(settings.currentPageFormat);
+  if (settings.labelPanelText != null)
+    this.setLabelPanelText(settings.labelPanelText);
+
+  // Blocks now exist and settings are applied — refresh the label panels so the
+  // type-box caption and each Label Out's derived comment resolve correctly
+  // (also covers older files that carry no labelPanelText setting).
+  this.refreshLabelPanels();
 };
 
 // Update the project name from the toolbar input (or programmatically).
@@ -1752,6 +1766,38 @@ SheetObject.prototype.setProjectName = function (value) {
   this.projectName = value == null ? "" : String(value);
   var inp = document.getElementById("projectNameInput");
   if (inp && document.activeElement !== inp) inp.value = this.projectName;
+};
+
+// Set the caption shown in every Label In/Out panel's type box. Purely
+// cosmetic; keeps the settings input in sync and re-renders all label panels.
+SheetObject.prototype.setLabelPanelText = function (value) {
+  this.labelPanelText =
+    value == null || value === "" ? "LABEL" : String(value);
+  var inp = document.getElementById("settingsLabelPanelText");
+  if (inp && document.activeElement !== inp) inp.value = this.labelPanelText;
+  this.refreshLabelPanels();
+};
+
+// Re-apply the type-box caption to every Label In/Out block and recompute each
+// Label Out's derived comment (taken from the matching Label In by name, or
+// "No Reference!" when none exists).
+SheetObject.prototype.refreshLabelPanels = function () {
+  var caption = this.labelPanelText || "LABEL";
+  for (var i = 0; i < this.blockObjects.length; i++) {
+    var b = this.blockObjects[i];
+    var on = b.objectName;
+    // All four blocks show the "LABEL" caption box.
+    if (
+      on !== "LabelInPanel" &&
+      on !== "LabelOutPanel" &&
+      on !== "TagLabelOut" &&
+      on !== "TagLabelIn"
+    )
+      continue;
+    if (b._typeBox) b._typeBox.innerHTML = caption;
+    // Only the Label Out panel derives its comment from a matching Label In.
+    if (on === "LabelOutPanel" && b._infoBox) b._updateInfoBox();
+  }
 };
 
 // Strip characters that are illegal in filenames and turn spaces into
