@@ -228,6 +228,9 @@ function SheetObject() {
               // Add to selection if not already selected
               if (sheetObj.selectedBlocks.indexOf(block) < 0) {
                 block.divObj.style.border = "1px solid red";
+                // Let blocks that render their own selection (e.g. DrawLine uses
+                // an outline instead of a shifting border) react and show handles.
+                if (block._showHandles) block._showHandles();
                 sheetObj.selectedBlocks.push(block);
               }
             }

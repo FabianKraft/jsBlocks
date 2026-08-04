@@ -4218,11 +4218,20 @@ DrawLineBlock.prototype._updateGeometry = function () {
   this._svg.setAttribute("width", w);
   this._svg.setAttribute("height", h);
 
-  // Line coordinates relative to container
-  var lx1 = this.x1 - minX;
-  var ly1 = this.y1 - minY;
-  var lx2 = this.x2 - minX;
-  var ly2 = this.y2 - minY;
+  // Line coordinates relative to container.
+  //
+  // Half-pixel nudge: the canvas grid is a 1px CSS background that fills the
+  // range [g, g+1) starting at each grid multiple g, so a grid line's visual
+  // centre is at g + 0.5. An SVG stroke is centred on its coordinate, so drawing
+  // a snapped line straight at g would make it straddle the top/left edge of the
+  // grid line and read as sitting too far up (horizontal) / too far left
+  // (vertical). Shifting the drawn stroke by +0.5 centres it on the grid line,
+  // matching how the 1px connection lines sit on the grid.
+  var half = 0.5;
+  var lx1 = this.x1 - minX + half;
+  var ly1 = this.y1 - minY + half;
+  var lx2 = this.x2 - minX + half;
+  var ly2 = this.y2 - minY + half;
 
   this._svgLine.setAttribute("x1", lx1);
   this._svgLine.setAttribute("y1", ly1);
@@ -4374,14 +4383,23 @@ DrawLineBlock.prototype.Execute = function () {};
 
 DrawLineBlock.prototype.resetStyle = function () {
   this.divObj.style.border = "none";
+  this.divObj.style.outline = "none";
 };
 
 // Show/hide handles on select/deselect
 DrawLineBlock.prototype._showHandles = function () {
+  // The generic selection code sets a 1px border on the container. Because the
+  // visible SVG sits at left:0/top:0 inside the container's padding box, adding
+  // a border pushes that padding box inward by the border width and the whole
+  // line jumps 1px down-right (and back on deselect). Use an outline instead —
+  // it is painted outside the box and never affects layout, so the line stays put.
+  this.divObj.style.border = "none";
+  this.divObj.style.outline = "1px solid red";
   this._handle1.style.display = "block";
   this._handle2.style.display = "block";
 };
 DrawLineBlock.prototype._hideHandles = function () {
+  this.divObj.style.outline = "none";
   this._handle1.style.display = "none";
   this._handle2.style.display = "none";
 };
