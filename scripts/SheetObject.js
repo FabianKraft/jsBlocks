@@ -2274,6 +2274,51 @@ SheetObject.prototype._restoreProject = function (project) {
 };
 
 // --- Copy / Paste ---
+//
+// The clipboard lives in two places: `this._clipboard` in memory (used for
+// repeated pastes so we can accumulate the paste offset), and a mirror in
+// localStorage under _CLIPBOARD_KEY. Since same-origin tabs share localStorage,
+// writing the mirror on copy is what makes a selection copied in one tab
+// pasteable in another. Each copy gets a unique `id`; paste adopts the shared
+// clipboard whenever its id differs from the one this tab last used.
+
+SheetObject.prototype._CLIPBOARD_KEY = "jsblocks_clipboard";
+
+// Read the shared cross-tab clipboard from localStorage (null if absent/bad).
+SheetObject.prototype._readSharedClipboard = function () {
+  try {
+    var raw = localStorage.getItem(this._CLIPBOARD_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+// Mirror the current in-memory clipboard into localStorage for other tabs.
+SheetObject.prototype._writeSharedClipboard = function () {
+  try {
+    localStorage.setItem(this._CLIPBOARD_KEY, JSON.stringify(this._clipboard));
+  } catch (e) {
+    if (console && console.warn)
+      console.warn("Could not write shared clipboard:", e);
+  }
+};
+
+// Make sure any custom block definitions that travelled with the clipboard are
+// registered in this tab before we try to instantiate them. Only imports when
+// something is actually missing, to avoid needless dropdown re-syncs.
+SheetObject.prototype._ensureClipboardCustomDefs = function () {
+  var defs = this._clipboard && this._clipboard.customDefinitions;
+  if (!defs) return;
+  var missing = false;
+  for (var name in defs) {
+    if (defs.hasOwnProperty(name) && !CustomBlockRegistry.has(name)) {
+      missing = true;
+      break;
+    }
+  }
+  if (missing) CustomBlockRegistry.importFromProject(defs);
+};
 
 SheetObject.prototype.copySelection = function () {
   if (this.selectedBlocks.length === 0) return;
@@ -2281,6 +2326,7 @@ SheetObject.prototype.copySelection = function () {
   this._clipboard = {
     blocks: [],
     connections: [],
+    customDefinitions: {},
   };
 
   // Serialize all selected blocks
@@ -2314,10 +2360,37 @@ SheetObject.prototype.copySelection = function () {
       }
     }
   }
+
+  // Carry along any custom block definitions used by the selection so it can be
+  // pasted in a tab whose registry doesn't have them yet.
+  for (var i = 0; i < this.selectedBlocks.length; i++) {
+    var b = this.selectedBlocks[i];
+    if (b.definition && b.objectName && b.objectName.indexOf("Custom_") === 0) {
+      this._clipboard.customDefinitions[b.definition.name] = b.definition;
+    }
+  }
+
+  // Tag this copy and mirror it to localStorage for cross-tab paste.
+  this._clipboard.id = Date.now() + "_" + Math.random().toString(36).slice(2);
+  this._clipboardId = this._clipboard.id;
+  this._writeSharedClipboard();
 };
 
 SheetObject.prototype.pasteClipboard = function () {
+  // Adopt a newer clipboard from another tab (or this tab's last copy) when the
+  // shared localStorage clipboard differs from what we last used. Repeated
+  // pastes of the same clipboard keep our in-memory copy so the paste offset
+  // keeps accumulating; a fresh copy anywhere resets that.
+  var shared = this._readSharedClipboard();
+  if (shared && shared.id && shared.id !== this._clipboardId) {
+    this._clipboard = shared;
+    this._clipboardId = shared.id;
+  }
+
   if (!this._clipboard || this._clipboard.blocks.length === 0) return;
+
+  // Register any custom definitions that came with the clipboard first.
+  this._ensureClipboardCustomDefs();
 
   var offset = 30; // Pixel offset from original position
   var newBlocks = [];
