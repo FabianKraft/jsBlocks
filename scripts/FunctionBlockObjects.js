@@ -112,8 +112,9 @@ AndBlock.prototype.addConnections = function () {
       "Bool - IN" + (connectorIndex + 1),
     );
   }
-  // output: ((n * 2) / 2) * grid  ==  n * grid  (vertical centre, on a grid line)
-  var a = n * grid;
+  // output: aligned with the last input pin
+  //   ((n-1) * 2 * grid) + grid  ==  (2n - 1) * grid  (on a grid line)
+  var a = (2 * n - 1) * grid;
   this.outConnections[0] = new Connector(
     this,
     0,
@@ -220,8 +221,9 @@ OrBlock.prototype.addConnections = function () {
       "Bool - IN" + (connectorIndex + 1),
     );
   }
-  // output: ((n * 2) / 2) * grid  ==  n * grid  (vertical centre, on a grid line)
-  var a = n * grid;
+  // output: aligned with the last input pin
+  //   ((n-1) * 2 * grid) + grid  ==  (2n - 1) * grid  (on a grid line)
+  var a = (2 * n - 1) * grid;
   this.outConnections[0] = new Connector(
     this,
     0,
@@ -1066,8 +1068,9 @@ XorBlock.prototype.addConnections = function () {
       "Bool - IN" + (connectorIndex + 1),
     );
   }
-  // output: ((n * 2) / 2) * grid  ==  n * grid  (vertical centre, on a grid line)
-  var a = n * grid;
+  // output: aligned with the last input pin
+  //   ((n-1) * 2 * grid) + grid  ==  (2n - 1) * grid  (on a grid line)
+  var a = (2 * n - 1) * grid;
   this.outConnections[0] = new Connector(
     this,
     0,
