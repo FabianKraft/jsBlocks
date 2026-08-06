@@ -40,6 +40,14 @@ function LineRouter(sheet) {
   this.pad = 12; // cells of head-room around the endpoints' bbox
   this.maxIterations = 300000; // safety cap for a single search
   this.occupancy = {}; // "cx,cy" -> count of lines running through the cell
+  this.bucketSize = 128; // px per spatial-index cell (obstacle lookup)
+  // Drag-local obstacle cache: while a block is being dragged the obstacle set
+  // is effectively static, so every connectTo() during the drag can share one
+  // snapshot instead of rebuilding the index on each mouse move (see
+  // beginDragCache/endDragCache). Outside a drag the index is always rebuilt
+  // fresh, so nothing can go stale.
+  this._obstacleIndexCache = null;
+  this._useObstacleCache = false;
 }
 
 // Routing cell size, derived from the sheet grid but clamped to a sane range so
@@ -105,6 +113,14 @@ LineRouter.prototype.stampCells = function (set) {
 // outside these rectangles, and A* start/goal cells are forced free, so
 // endpoints stay reachable while line bodies never cross a block.
 LineRouter.prototype._obstacles = function () {
+  if (!Perf.enabled) return this._obstaclesImpl();
+  var t0 = performance.now();
+  var r = this._obstaclesImpl();
+  Perf.add("LineRouter._obstacles", performance.now() - t0);
+  return r;
+};
+
+LineRouter.prototype._obstaclesImpl = function () {
   var rects = [];
   var blocks = this.sheet.blockObjects;
   for (var i = 0; i < blocks.length; i++) {
@@ -124,7 +140,79 @@ LineRouter.prototype._obstacles = function () {
   return rects;
 };
 
-LineRouter.prototype._pointBlocked = function (px, py, rects) {
+// Build a reusable obstacle index ONCE (Point 1) and bucket every rectangle
+// into a coarse spatial grid (Point 2) so a point test only checks the handful
+// of blocks in its own cell instead of scanning all of them. Returned object:
+//   { grid: { "gx,gy": [rect,...] }, bucket: <px> }
+// Pass it into route() via options.obstacles so a whole reroute shares one index.
+LineRouter.prototype._buildObstacleIndex = function () {
+  if (!Perf.enabled) return this._buildObstacleIndexImpl();
+  var t0 = performance.now();
+  var r = this._buildObstacleIndexImpl();
+  Perf.add("LineRouter.buildIndex", performance.now() - t0);
+  return r;
+};
+
+LineRouter.prototype._buildObstacleIndexImpl = function () {
+  var rects = this._obstaclesImpl();
+  var B = this.bucketSize;
+  var grid = {};
+  for (var i = 0; i < rects.length; i++) {
+    var r = rects[i];
+    var gx0 = Math.floor(r.l / B),
+      gx1 = Math.floor(r.r / B);
+    var gy0 = Math.floor(r.t / B),
+      gy1 = Math.floor(r.b / B);
+    for (var gx = gx0; gx <= gx1; gx++) {
+      for (var gy = gy0; gy <= gy1; gy++) {
+        var key = gx + "," + gy;
+        var bucket = grid[key] || (grid[key] = []);
+        bucket.push(r);
+      }
+    }
+  }
+  return { grid: grid, bucket: B };
+};
+
+// Return an obstacle index for a standalone route() (one that wasn't handed a
+// prebuilt index). During a drag the cached snapshot is reused; otherwise a
+// fresh index is built so obstacle positions are always current.
+LineRouter.prototype.getObstacleIndex = function () {
+  if (this._useObstacleCache) {
+    if (!this._obstacleIndexCache) {
+      this._obstacleIndexCache = this._buildObstacleIndex();
+    }
+    return this._obstacleIndexCache;
+  }
+  return this._buildObstacleIndex();
+};
+
+// Start reusing one obstacle snapshot for the duration of a drag. The snapshot
+// is built lazily on the first route() call so a plain click costs nothing.
+LineRouter.prototype.beginDragCache = function () {
+  this._useObstacleCache = true;
+  this._obstacleIndexCache = null;
+};
+
+// Stop reusing the snapshot (drag finished). The next reroute rebuilds fresh.
+LineRouter.prototype.endDragCache = function () {
+  this._useObstacleCache = false;
+  this._obstacleIndexCache = null;
+};
+
+// True if (px,py) falls inside any obstacle. `obstacles` is either a spatial
+// index from _buildObstacleIndex() (fast path: only the point's bucket is
+// scanned) or, for back-compat, a flat array of rects (full scan).
+LineRouter.prototype._pointBlocked = function (px, py, obstacles) {
+  var rects;
+  if (obstacles && obstacles.grid) {
+    var key =
+      Math.floor(px / obstacles.bucket) + "," + Math.floor(py / obstacles.bucket);
+    rects = obstacles.grid[key];
+    if (!rects) return false; // empty bucket -> nothing nearby
+  } else {
+    rects = obstacles; // legacy flat-array path
+  }
   for (var i = 0; i < rects.length; i++) {
     var r = rects[i];
     if (px >= r.l && px <= r.r && py >= r.t && py <= r.b) return true;
@@ -142,11 +230,23 @@ LineRouter.prototype._pointBlocked = function (px, py, rects) {
 //              routed lines; traversing them is cheap so sibling lines merge
 //              onto a shared trunk before branching off.
 LineRouter.prototype.route = function (from, to, options) {
+  if (!Perf.enabled) return this._routeImpl(from, to, options);
+  var t0 = performance.now();
+  var r = this._routeImpl(from, to, options);
+  Perf.add("LineRouter.route", performance.now() - t0);
+  return r;
+};
+
+LineRouter.prototype._routeImpl = function (from, to, options) {
   options = options || {};
   var useOverlap = !!options.overlap;
   var prefer = options.prefer || null;
   var C = this.cellSize();
-  var rects = this._obstacles();
+  // Point 1: reuse a prebuilt obstacle index when the caller supplies one
+  // (rerouteAllLines builds it once for the whole sheet); otherwise get one
+  // via getObstacleIndex(), which reuses a cached snapshot during a drag and
+  // rebuilds fresh otherwise. Point 2: the index is a bucketed spatial grid.
+  var obstacles = options.obstacles || this.getObstacleIndex();
 
   var sx = Math.round(from.x / C),
     sy = Math.round(from.y / C);
@@ -174,7 +274,7 @@ LineRouter.prototype.route = function (from, to, options) {
     if (cx === gx && cy === gy) return false;
     var key = cx + "," + cy;
     if (blockedCache[key] !== undefined) return blockedCache[key];
-    var res = self._pointBlocked(cx * C, cy * C, rects);
+    var res = self._pointBlocked(cx * C, cy * C, obstacles);
     blockedCache[key] = res;
     return res;
   };

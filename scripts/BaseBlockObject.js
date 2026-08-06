@@ -167,6 +167,12 @@ Base.prototype.mousedownHandler = function (e) {
     this.captured = 1;
     this.sheetObject.turnOffSelect();
 
+    // Reuse one obstacle snapshot for every connectTo() during this drag
+    // instead of rebuilding the index on each mouse move.
+    if (this.sheetObject.lineRouter) {
+      this.sheetObject.lineRouter.beginDragCache();
+    }
+
     var current = this;
     this._docMoveHandler = function (e) {
       current.moveHandler(e);
@@ -256,6 +262,11 @@ Base.prototype.moveHandler = function (e) {
   }
 };
 Base.prototype.mouseupHandler = function (e) {
+  // Drag finished → stop reusing the obstacle snapshot. The reroute below
+  // rebuilds a fresh index anyway, so routes settle on the real positions.
+  if (this.sheetObject.lineRouter) {
+    this.sheetObject.lineRouter.endDragCache();
+  }
   if (this.captured) {
     this.captured = 0;
     // Reset zIndex/opacity for all blocks that were dragged

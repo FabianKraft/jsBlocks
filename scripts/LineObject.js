@@ -184,7 +184,7 @@ LineObject.prototype._computePath = function (useOverlap) {
 // Net-aware path used by SheetObject.rerouteAllLines(): sibling lines of the
 // same output pin share a trunk via the `preferCells` discount. Manual
 // waypoints still take precedence.
-LineObject.prototype.computeNetPath = function (preferCells) {
+LineObject.prototype.computeNetPath = function (preferCells, obstacleIndex) {
   var ep = this._endpoints();
   if (this.waypoints.length > 0) {
     return this._pathThroughWaypoints(ep.from, ep.to);
@@ -194,6 +194,7 @@ LineObject.prototype.computeNetPath = function (preferCells) {
     var pts = sheet.lineRouter.route(ep.from, ep.to, {
       overlap: true,
       prefer: preferCells,
+      obstacles: obstacleIndex, // shared prebuilt index (may be undefined)
     });
     if (pts && pts.length >= 2) return pts;
   }

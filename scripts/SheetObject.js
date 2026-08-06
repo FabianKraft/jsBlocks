@@ -548,11 +548,35 @@ SheetObject.prototype._redrawAllLines = function () {
   for (var i = 0; i < lines.length; i++) lines[i].connectTo();
 };
 
+// Measuring wrapper (see scripts/Perf.js). Zero cost while Perf.enabled is
+// false; otherwise records the full reroute duration and, in verbose mode,
+// logs it live with the current block/line counts.
+SheetObject.prototype.rerouteAllLines = function () {
+  var self = this;
+  Perf.time("rerouteAllLines", function () {
+    self._rerouteAllLinesImpl();
+  });
+  if (Perf.verbose) {
+    var s = Perf.stats["rerouteAllLines"];
+    if (s) {
+      console.log(
+        "[Perf] rerouteAllLines: " +
+          s.last.toFixed(1) +
+          " ms  (blocks " +
+          self.blockObjects.length +
+          ", lines " +
+          self._allLines().length +
+          ")",
+      );
+    }
+  }
+};
+
 // Full-quality reroute of every line, grouped into nets by their output pin.
 // Lines of the SAME net (same signal) are attracted onto a shared trunk and get
 // junction dots where they branch; lines of DIFFERENT nets repel each other so
 // unrelated signals stay in separate lanes and simply cross without a dot.
-SheetObject.prototype.rerouteAllLines = function () {
+SheetObject.prototype._rerouteAllLinesImpl = function () {
   if (!this.lineRouter) {
     this._redrawAllLines();
     return;
@@ -583,6 +607,11 @@ SheetObject.prototype.rerouteAllLines = function () {
     return da - db;
   };
 
+  // Point 1: build the obstacle index ONCE for the whole sheet (block
+  // positions don't change during a reroute) and share it across every line,
+  // instead of rebuilding it inside each route() call.
+  var obstacleIndex = this.lineRouter._buildObstacleIndex();
+
   this.lineRouter.clearOccupancy();
   for (var n = 0; n < nets.length; n++) {
     var net = nets[n];
@@ -590,7 +619,7 @@ SheetObject.prototype.rerouteAllLines = function () {
     var prefer = {};
     for (var l = 0; l < net.lines.length; l++) {
       var line = net.lines[l];
-      var pts = line.computeNetPath(prefer);
+      var pts = line.computeNetPath(prefer, obstacleIndex);
       line._applyPath(pts);
       this.lineRouter.addPathCells(prefer, pts);
     }
