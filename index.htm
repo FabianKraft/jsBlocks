@@ -564,29 +564,57 @@
                 overflow-y: auto;
                 margin-bottom: 10px;
             }
-            .cb-manager-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 6px 4px;
-                border-bottom: 1px solid #eee;
+            .cb-mgr-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12px;
             }
-            .cb-manager-row:hover {
+            .cb-mgr-table thead th {
+                text-align: left;
+                font-size: 11px;
+                color: #444;
+                font-weight: bold;
+                border-bottom: 2px solid #ddd;
+                padding: 4px 8px 5px 8px;
+                white-space: nowrap;
+            }
+            .cb-mgr-table tbody td {
+                padding: 5px 8px;
+                border-bottom: 1px solid #eee;
+                vertical-align: middle;
+            }
+            .cb-mgr-table tbody tr:hover {
                 background: #f5f5f5;
             }
             .cb-mgr-name {
                 font-weight: bold;
                 font-size: 13px;
-                min-width: 100px;
+                white-space: nowrap;
+            }
+            .cb-mgr-label {
+                color: #555;
             }
             .cb-mgr-detail {
                 font-size: 11px;
                 color: #777;
-                margin-left: 10px;
+                white-space: nowrap;
+            }
+            .cb-mgr-usage-col,
+            .cb-mgr-usage {
+                text-align: center;
+            }
+            .cb-mgr-usage {
+                font-weight: bold;
+                color: #333;
+            }
+            .cb-mgr-usage-zero {
+                color: #bbb;
+                font-weight: normal;
             }
             .cb-mgr-actions {
                 display: flex;
                 gap: 4px;
+                justify-content: flex-end;
             }
             .cb-manager-empty {
                 text-align: center;

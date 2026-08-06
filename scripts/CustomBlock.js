@@ -1032,6 +1032,33 @@ var CustomBlockManager = {
     };
   },
 
+  // Count how many instances of a custom block are placed in the current
+  // project (across all pages of the single sheet).
+  _countUsage: function (name) {
+    var count = 0;
+    var sheet = window.my_Sheet;
+    if (sheet && sheet.blockObjects) {
+      for (var i = 0; i < sheet.blockObjects.length; i++) {
+        var block = sheet.blockObjects[i];
+        if (
+          block instanceof CustomBlock &&
+          block.definition &&
+          block.definition.name === name
+        ) {
+          count++;
+        }
+      }
+    }
+    return count;
+  },
+
+  _escapeHtml: function (s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  },
+
   _refreshList: function () {
     var list = document.getElementById("cbManagerList");
     var empty = document.getElementById("cbManagerEmpty");
@@ -1044,22 +1071,25 @@ var CustomBlockManager = {
     }
     empty.style.display = "none";
 
+    var html =
+      '<table class="cb-mgr-table">' +
+      "<thead><tr>" +
+      "<th>Name (ID)</th>" +
+      "<th>Label</th>" +
+      "<th>Ins/Outs</th>" +
+      '<th class="cb-mgr-usage-col">Usage</th>' +
+      '<th class="cb-mgr-actions-col"></th>' +
+      "</tr></thead><tbody>";
+
     for (var i = 0; i < defs.length; i++) {
       var def = defs[i];
-      var row = document.createElement("div");
-      row.className = "cb-manager-row";
-
-      var info =
-        '<span class="cb-mgr-name">' +
-        (def.text || def.name) +
-        "</span>" +
-        '<span class="cb-mgr-detail">' +
+      var usage = this._countUsage(def.name);
+      var ioText =
         def.inputs.length +
         " in / " +
         def.outputs.length +
         " out" +
-        (def.state.length > 0 ? " / " + def.state.length + " state" : "") +
-        "</span>";
+        (def.state.length > 0 ? " / " + def.state.length + " state" : "");
 
       var actions =
         '<button class="cb-mini-btn cb-mgr-edit" data-name="' +
@@ -1072,10 +1102,30 @@ var CustomBlockManager = {
         def.name +
         '" style="color:#c00">Delete</button>';
 
-      row.innerHTML =
-        info + '<span class="cb-mgr-actions">' + actions + "</span>";
-      list.appendChild(row);
+      html +=
+        "<tr>" +
+        '<td class="cb-mgr-name">' +
+        this._escapeHtml(def.name) +
+        "</td>" +
+        '<td class="cb-mgr-label">' +
+        this._escapeHtml(def.text || "") +
+        "</td>" +
+        '<td class="cb-mgr-detail">' +
+        ioText +
+        "</td>" +
+        '<td class="cb-mgr-usage' +
+        (usage === 0 ? " cb-mgr-usage-zero" : "") +
+        '">' +
+        usage +
+        "</td>" +
+        '<td class="cb-mgr-actions">' +
+        actions +
+        "</td>" +
+        "</tr>";
     }
+
+    html += "</tbody></table>";
+    list.innerHTML = html;
 
     // Bind action buttons
     var editBtns = list.querySelectorAll(".cb-mgr-edit");
